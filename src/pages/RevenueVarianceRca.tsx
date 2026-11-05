@@ -104,6 +104,7 @@ export default function RevenueVarianceRca() {
   const extWeather = fourFactors?.externalEnvFactor || null;
   const compMarket = fourFactors?.competitorMarketFactor || null;
   const parkingBehavior = fourFactors?.parkingAndBehaviorFactor || null;
+  const integrityFactor = fourFactors?.dataIntegrityFactor || null;
 
   const isNegative = Number(formula?.revenueDiffAmount) < 0;
 
@@ -475,49 +476,84 @@ export default function RevenueVarianceRca() {
       </div>
 
       {/* =====================================================================
-          3. 기타 참고 상황 (날씨 · 주변 경쟁 리조트 · 손님 이동)
+          3. 외부 환경 및 주요 운영 지표 (한 줄 요약 — 6대 카드)
          ===================================================================== */}
       <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5 space-y-3">
         <div className="flex items-center gap-1.5 text-xs font-black text-[#6C7A73]">
           <Info size={14} className="text-[#284F42]" />
-          <span>3. 참고할 주변 상황 (짧은 설명)</span>
+          <span>3. 외부 환경 및 주요 운영 지표 (한 줄 요약)</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs">
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">날씨와 휴일 영향</span>
-            <strong className="text-[#1B382E]">
-              올해 {fmtText(extWeather?.tyWeatherDesc)}({fmtText(extWeather?.tyTempMax)}°C) vs 비교일{' '}
-              {fmtText(extWeather?.lyWeatherDesc)}({fmtText(extWeather?.lyTempMax)}°C) · 공휴일 {fmtInt(calFactor?.tyHolidayDays)}일
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
+          {/* [카드 1] 날씨 / 공휴일 */}
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 공휴일</span>
+            <strong className="text-[#1B382E] text-right">
+              {fmtText(extWeather?.tyWeatherDesc)} {fmtText(extWeather?.tyTempMax)}°C (비교기{' '}
+              {fmtText(extWeather?.lyWeatherDesc)} {fmtText(extWeather?.lyTempMax)}°C) · 공휴일{' '}
+              {fmtInt(calFactor?.tyHolidayDays)}일
             </strong>
           </div>
 
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">주변 경쟁 리조트 상황</span>
-            <strong className="text-[#1B382E]">
-              주변 {fmtInt(compMarket?.monitoredResortCount)}곳 중 만실 {fmtInt(compMarket?.soldOutResortCount)}곳 (평균 최저가{' '}
-              {fmtInt(compMarket?.competitorAvgMinPrice)}원)
+          {/* [카드 2] 경쟁사 만실 여부 */}
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <span className="text-[#6C7A73] font-semibold shrink-0">경쟁사 만실 여부</span>
+            <strong className="text-[#1B382E] text-right">
+              충청 4사 만실 {fmtInt(compMarket?.soldOutResortCount)}/{fmtInt(compMarket?.monitoredResortCount)}곳 (최저가{' '}
+              {fmtInt(compMarket?.competitorAvgMinPrice)}원, 동요일비{' '}
+              {fmtPctOne(compMarket?.competitorSameClassSurgeRatioPct, true)})
             </strong>
           </div>
 
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">골프 손님 중 안 자고 간 팀</span>
-            <strong className="text-[#1B382E]">
-              골프 {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfVisitedTeams)}팀 중{' '}
+          {/* [카드 3] 콘도 열쇠 가동·수익 */}
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <span className="text-[#6C7A73] font-semibold shrink-0">콘도 열쇠 가동·수익</span>
+            <strong className="text-[#1B382E] text-right">
+              물리열쇠{' '}
+              {fmtPctOne(
+                calFactor?.regimeDynamicThresholds?.actualKeyOccPct ??
+                  condoDetail?.tyPhysicalKeyOccPct ??
+                  compMarket?.belleforetPhysicalKeyOccPct
+              )}{' '}
+              ({fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
+              {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}키, 기대{' '}
+              {fmtPctOne(calFactor?.regimeDynamicThresholds?.expectedKeyOccPct)}) · 열쇠당{' '}
+              {fmtInt(condoDetail?.tyKeyYield)}원 ({fmtPct(condoDetail?.keyYieldGrowthPct)})
+            </strong>
+          </div>
+
+          {/* [카드 4] 골퍼 미숙박 이탈 */}
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <span className="text-[#6C7A73] font-semibold shrink-0">골퍼 미숙박 이탈</span>
+            <strong className="text-[#1B382E] text-right">
+              진성타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
               <span className="text-rose-600">
-                {fmtInt(compMarket?.unconvertedInternalStayDemand?.golfNonStayExternalOrDayTripTeams)}팀 당일 귀가
-              </span>{' '}
-              (빈 객실 {fmtInt(compMarket?.belleforetUnsoldPhysicalKeys)}개 여유)
-            </strong>
-          </div>
-
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between">
-            <span className="text-[#6C7A73] font-semibold">숙박 손님 외부 식당/마트 외출</span>
-            <strong className="text-[#1B382E]">
-              외출 {fmtInt(parkingBehavior?.lyStayOutingCount)}회 ➔{' '}
-              <span className="text-rose-600">
-                {fmtInt(parkingBehavior?.tyStayOutingCount)}회 ({fmtPctOne(parkingBehavior?.tyStayOutingRatePct)})
+                {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 미숙박
               </span>
+            </strong>
+          </div>
+
+          {/* [카드 5] 투숙객 외부 외출 */}
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <span className="text-[#6C7A73] font-semibold shrink-0">투숙객 외부 외출</span>
+            <strong className="text-[#1B382E] text-right">
+              외출 {fmtInt(parkingBehavior?.tyStayOutingCount)}회 (
+              <span className="text-rose-600">
+                {fmtPctOne(
+                  parkingBehavior?.tyStayOutingRatePct ??
+                    calFactor?.regimeDynamicThresholds?.actualStayOutingRatePct
+                )}
+              </span>
+              , 경보 기준 {fmtPctOne(calFactor?.regimeDynamicThresholds?.outingAlertThresholdPct)})
+            </strong>
+          </div>
+
+          {/* [카드 6] 정산 무결성 / 후정산 */}
+          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
+            <span className="text-[#6C7A73] font-semibold shrink-0">정산 무결성 / 후정산</span>
+            <strong className="text-[#1B382E] text-right">
+              오차 {fmtInt(integrityFactor?.reconciliationDeltaWon)}원 · 후정산 대기{' '}
+              {fmtInt(integrityFactor?.cityLedgerPendingAmount)}원 ({fmtInt(integrityFactor?.cityLedgerPendingCount)}건)
             </strong>
           </div>
         </div>

@@ -5,6 +5,7 @@ import type {
   ParkingTimeAnalyticsResponse,
   StayNonGolfCohort,
   WalkInNonGroupCohort,
+  WalkInDiscountStoreItem,
   ParkingDayOfWeekItem,
 } from '../types/reports-v2';
 import ReactECharts from 'echarts-for-react';
@@ -22,6 +23,8 @@ import {
   CheckCircle2,
   Filter,
   TrendingUp,
+  Store,
+  Tag,
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -104,6 +107,7 @@ export default function ParkingTimeAnalytics() {
 
   const [data, setData] = useState<ParkingTimeAnalyticsResponse | null>(null);
   const [resortVisitors, setResortVisitors] = useState<Record<string, any> | null>(null);
+  const [parkSummary, setParkSummary] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -136,7 +140,13 @@ export default function ParkingTimeAnalytics() {
         parkSummaryRes?.summary?.resortVisitors ||
         parkSummaryRes?.data?.resortVisitors ||
         null;
+      const ps =
+        parkSummaryRes?.summary ||
+        parkSummaryRes?.gateSummary ||
+        parkSummaryRes?.data?.summary ||
+        null;
       setResortVisitors(rv);
+      setParkSummary(ps);
 
       if (payload && payload.success) {
         setData(payload);
@@ -148,6 +158,7 @@ export default function ParkingTimeAnalytics() {
       console.error('[ParkingTimeAnalytics] Fetch Error:', err);
       setData(null);
       setResortVisitors(null);
+      setParkSummary(null);
       setApiError(err?.message || '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
@@ -1303,6 +1314,267 @@ export default function ParkingTimeAnalytics() {
                 체류시간 구간 분포 데이터 없음 (`-`)
               </div>
             )}
+          </div>
+
+          {/* 2-B-2. 🏷️×🚗 순수 나들이고객 주차할인 등록 매장 및 할인·사전등록 내역 (discountStores / discountSummary) */}
+          <div className="bg-[#FAF9F6] rounded-xl p-4 sm:p-5 border border-[#E5E0D5] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 rounded bg-teal-800 text-white text-[11px] font-black flex items-center gap-1">
+                  <Store size={12} />
+                  할인 매장 & 주차 정산 (SSOT)
+                </span>
+                <h3 className="text-sm font-black text-[#1B382E]">
+                  순수 나들이고객 주차할인 적용 매장 및 사전등록·정산 현황 (`discountStores` · `discountSummary`)
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold text-[#5A6B63]">
+                조회 스코프: {DAY_SCOPE_OPTIONS.find((o) => o.key === selectedWalkInDayScope)?.label}
+              </span>
+            </div>
+
+            {/* 상단 요약 카드 4종: POS 주차할인 차량 / 모토아레나 사전등록 / 식음·액티비티 사전등록 / 총 주차할인 감면액 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="bg-white rounded-xl p-3.5 border border-[#E5E0D5]">
+                <div className="text-xs font-bold text-[#5A6B63] flex items-center justify-between">
+                  <span>POS 매장 주차할인 적용 차량</span>
+                  <Tag size={14} className="text-teal-700" />
+                </div>
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-xl font-black text-teal-800">
+                    {fmtNum(
+                      activeWalkInCohort?.discountSummary?.discountOnlyCars ??
+                        (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.discountOnlyCars : null),
+                      '대'
+                    )}
+                  </span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-800">
+                    전액 감면
+                  </span>
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
+                  <div>
+                    할인 + 추가 유료결제:{' '}
+                    <strong className="text-[#1B382E]">
+                      {fmtNum(
+                        activeWalkInCohort?.discountSummary?.discountAndPaidCars ??
+                          (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.discountAndPaidCars : null),
+                        '대'
+                      )}
+                    </strong>
+                  </div>
+                  <div>
+                    무할인 일반 유료결제:{' '}
+                    <strong className="text-[#1B382E]">
+                      {fmtNum(
+                        activeWalkInCohort?.discountSummary?.paidOnlyCars ??
+                          (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.paidOnlyCars : null),
+                        '대'
+                      )}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-3.5 border border-[#E5E0D5]">
+                <div className="text-xs font-bold text-[#5A6B63] flex items-center justify-between">
+                  <span>모토아레나 사전등록 차량</span>
+                  <Car size={14} className="text-[#284F42]" />
+                </div>
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-xl font-black text-[#1B382E]">
+                    {fmtNum(
+                      activeWalkInCohort?.discountSummary?.motoArenaRegCars ??
+                        (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.uniqueMotoArenaCars : null),
+                      '대'
+                    )}
+                  </span>
+                  <span className="text-[11px] font-bold text-[#5A6B63]">업장 차량등록</span>
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1">
+                  모토아레나 방문 시 차량번호 사전 등록으로 무료 출차된 나들이 차량
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-3.5 border border-[#E5E0D5]">
+                <div className="text-xs font-bold text-[#5A6B63] flex items-center justify-between">
+                  <span>식음·액티비티 사전등록 차량</span>
+                  <Store size={14} className="text-[#9E7542]" />
+                </div>
+                <div className="flex items-baseline gap-2 mt-1.5">
+                  <span className="text-xl font-black text-[#9E7542]">
+                    {fmtNum(
+                      activeWalkInCohort?.discountSummary?.activityFnbRegCars ??
+                        (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.uniqueActivityFnbRegCars : null),
+                      '대'
+                    )}
+                  </span>
+                  <span className="text-[11px] font-bold text-[#5A6B63]">매장 차량등록</span>
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1">
+                  식음료 매장 및 레저 액티비티 업장에서 사전 등록된 나들이 차량
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-3.5 border border-[#E5E0D5]">
+                <div className="text-xs font-bold text-[#5A6B63] flex items-center justify-between">
+                  <span>총 주차할인 감면액 · 유료정산액</span>
+                  <TrendingUp size={14} className="text-teal-700" />
+                </div>
+                <div className="text-xl font-black text-[#1B382E] mt-1.5">
+                  {fmtNum(
+                    activeWalkInCohort?.discountSummary?.totalDiscountAmount ??
+                      (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.parkingDiscountAmount : null),
+                    '원'
+                  )}
+                </div>
+                <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
+                  <div>
+                    유료 주차 결제액:{' '}
+                    <strong className="text-[#1B382E]">
+                      {fmtNum(
+                        activeWalkInCohort?.discountSummary?.totalPaidAmount ??
+                          (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.parkingPayAmount : null),
+                        '원'
+                      )}
+                    </strong>
+                  </div>
+                  <div>
+                    할인·결제 합산 차량:{' '}
+                    <strong className="text-teal-800">
+                      {fmtNum(
+                        activeWalkInCohort?.discountSummary?.totalDiscountedCars ??
+                          (selectedWalkInDayScope === 'PERIOD_ALL' ? parkSummary?.discountOrPaidCars : null),
+                        '대'
+                      )}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 매장별 주차할인 상세 리스트 (discountStores / discountByVenue 1:1 바인딩) */}
+            {(() => {
+              const storeList: WalkInDiscountStoreItem[] =
+                activeWalkInCohort?.discountStores ||
+                activeWalkInCohort?.discountByVenue ||
+                (selectedWalkInDayScope === 'PERIOD_ALL'
+                  ? (parkSummary?.walkInDiscountStores as WalkInDiscountStoreItem[]) ||
+                    (parkSummary?.discountStores as WalkInDiscountStoreItem[])
+                  : undefined) ||
+                [];
+
+              if (storeList.length > 0) {
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                      {storeList.map((st, idx) => {
+                        const sName = st.storeName || st.venueName || '-';
+                        const sCars = st.discountedCars ?? st.cars;
+                        const sRatio = st.shareRatio ?? st.ratio;
+                        return (
+                          <div key={st.storeCode || `${sName}-${idx}`} className="bg-white rounded-xl p-3 border border-[#E5E0D5]">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs font-black text-[#1B382E] truncate" title={sName}>
+                                {sName}
+                              </span>
+                              {st.categoryName && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 shrink-0">
+                                  {st.categoryName}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-baseline justify-between mt-1.5">
+                              <span className="text-lg font-black text-teal-800">{fmtNum(sCars, '대')}</span>
+                              <span className="text-xs font-black px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                                {fmtPct(sRatio)}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-[#5A6B63] mt-1 space-y-0.5">
+                              <div>환산 방문객: <strong className="text-[#1B382E]">{fmtNum(st.visitors, '명')}</strong></div>
+                              {st.discountAmount != null && (
+                                <div>할인감면액: <strong className="text-[#1B382E]">{fmtNum(st.discountAmount, '원')}</strong></div>
+                              )}
+                              {st.avgDwellFormatted && (
+                                <div>평균체류: <strong className="text-[#1B382E]">{st.avgDwellFormatted}</strong></div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="overflow-x-auto rounded-xl border border-[#E5E0D5] bg-white">
+                      <table className="w-full text-xs text-left border-collapse">
+                        <thead>
+                          <tr className="bg-[#1B382E] text-white font-bold">
+                            <th className="py-2 px-3">할인 등록 매장명</th>
+                            <th className="py-2 px-3">부문 구분</th>
+                            <th className="py-2 px-3 text-right">할인 적용 차량</th>
+                            <th className="py-2 px-3 text-right">환산 방문객(×3명)</th>
+                            <th className="py-2 px-3 text-right">나들이 차량 대비 비중</th>
+                            <th className="py-2 px-3 text-right">할인 적용 건수</th>
+                            <th className="py-2 px-3 text-right">주차할인 감면액</th>
+                            <th className="py-2 px-3 text-center">평균 체류시간</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#EFECE6]">
+                          {storeList.map((st, idx) => {
+                            const sName = st.storeName || st.venueName || '-';
+                            const sCars = st.discountedCars ?? st.cars;
+                            const sRatio = st.shareRatio ?? st.ratio;
+                            return (
+                              <tr key={st.storeCode || `${sName}-row-${idx}`} className="hover:bg-[#F4F3EE]">
+                                <td className="py-2 px-3 font-black text-[#1B382E]">{sName}</td>
+                                <td className="py-2 px-3 text-[#5A6B63]">{fmtText(st.categoryName || st.discountType)}</td>
+                                <td className="py-2 px-3 text-right font-black text-teal-800">{fmtNum(sCars, '대')}</td>
+                                <td className="py-2 px-3 text-right font-bold">{fmtNum(st.visitors, '명')}</td>
+                                <td className="py-2 px-3 text-right font-bold text-teal-800">{fmtPct(sRatio)}</td>
+                                <td className="py-2 px-3 text-right">{fmtNum(st.discountCount, '건')}</td>
+                                <td className="py-2 px-3 text-right font-semibold">{fmtNum(st.discountAmount, '원')}</td>
+                                <td className="py-2 px-3 text-center">{fmtText(st.avgDwellFormatted)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="bg-white rounded-xl p-4 border border-dashed border-[#D5CFC2] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="text-xs font-black text-[#1B382E] flex items-center gap-1.5">
+                      <AlertCircle size={14} className="text-amber-600 shrink-0" />
+                      <span>
+                        개별 매장별 주차할인 차량 내역(`walkInNonGroup.discountStores[]`): 백엔드 마트 필드 미수신 (`-`)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#5A6B63]">
+                      현재 백엔드 주차 API는 전체 POS 할인 차량(
+                      <strong className="text-[#1B382E]">
+                        {fmtNum(parkSummary?.discountOnlyCars, '대')}
+                      </strong>
+                      ) 및 사전등록 구분(모토아레나{' '}
+                      <strong className="text-[#1B382E]">
+                        {fmtNum(parkSummary?.uniqueMotoArenaCars, '대')}
+                      </strong>
+                      · 식음/액티비티{' '}
+                      <strong className="text-[#1B382E]">
+                        {fmtNum(parkSummary?.uniqueActivityFnbRegCars, '대')}
+                      </strong>
+                      ) 합계만 반환하며, 세부 매장명(브리스킷346·남도예담·투썸플레이스·벨포레목장 등)별 할인 대수 배열은{' '}
+                      <code className="font-mono text-[#1B382E]">backend_request.md (Ticket 84)</code>로 정식 요청되었습니다.
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold shrink-0">
+                    매장별 상세: - (Ticket 84 연동 대기)
+                  </span>
+                </div>
+              );
+            })()}
           </div>
 
           {/* 2-C. 나들이(단체제외) 시간대별(0~23시) 입출차 차트 + 요일별 비교 차트 */}

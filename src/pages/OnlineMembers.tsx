@@ -1542,20 +1542,20 @@ export default function OnlineMembers() {
                 </div>
               </div>
 
-              {/* 우측 4칸: 15)고객 마스터 프로파일 (거주 권역 · 연령대 · 마케팅 수신동의) */}
+              {/* 우측 4칸: 고객 등급 프로파일 & 활동/휴면 요약 */}
               <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-[#D0C6BB]/75 shadow-xs flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <h3 className="text-base font-extrabold text-[#1B382E] flex items-center gap-2">
-                      <MapPin size={18} className="text-[#284F42]" />
-                      15)고객 마스터 프로파일 & 수신동의
+                      <MapPin size={18} className="text-[#284F42] shrink-0" />
+                      <span>온라인 회원 등급 프로파일 & 리텐션</span>
                     </h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1]">
-                      dim_customer_master_v6
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E8F2EE] text-[#1E523F] border border-[#B4C6C1] shrink-0">
+                      회원 등급 분포
                     </span>
                   </div>
                   <p className="text-xs text-[#5A6B63] mt-0.5">
-                    거주 권역(시/도), 연령대 분포 및 SMS·이메일 마케팅 수신동의 모수
+                    이용횟수 등급별(단발·일반·단골·충성) 회원 비중 및 최근 6개월 실활동·Win-back 타겟 모수
                   </p>
                 </div>
 
@@ -1591,20 +1591,60 @@ export default function OnlineMembers() {
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className="my-4 p-4 rounded-2xl bg-[#F4F3EE]/80 border border-dashed border-[#D0C6BB] text-xs space-y-2">
-                    <div className="flex items-center gap-1.5 font-bold text-[#1B382E]">
-                      <MailCheck size={15} className="text-[#284F42]" />
-                      <span>15)고객 마스터 DB 적재 완료 · API 응답 필드 연결 대기 (Ticket 74/75)</span>
+                ) : dormancyIntel ? (
+                  <div className="space-y-3 my-3 font-financial text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-3 rounded-xl bg-[#E8F2EE] border border-[#B4C6C1]/70">
+                        <div className="text-[11px] text-[#1E523F] font-bold flex items-center gap-1">
+                          <MailCheck size={13} /> 최근 6개월 활성 회원
+                        </div>
+                        <div className="text-lg font-black text-[#1B382E] mt-0.5">
+                          {dormancyIntel.summary?.activeMembers != null
+                            ? `${formatCurrency(dormancyIntel.summary.activeMembers)}명`
+                            : '-'}
+                        </div>
+                        <div className="text-[10px] text-[#1E523F]">
+                          전체 온라인 회원 {formatCurrency(dormancyIntel.summary?.totalOnlineMembers)}명 중
+                        </div>
+                      </div>
+                      <div className="p-3 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/70">
+                        <div className="text-[11px] text-[#8B2635] font-bold">핵심 Win-back 타겟(4회+)</div>
+                        <div className="text-lg font-black text-[#8B2635] mt-0.5">
+                          {dormancyIntel.summary?.winbackTargetsTotal != null
+                            ? `${formatCurrency(dormancyIntel.summary.winbackTargetsTotal)}명`
+                            : '-'}
+                        </div>
+                        <div className="text-[10px] text-[#5A6B63]">
+                          단골 {formatCurrency(dormancyIntel.summary?.regularDormantCount)}명 · 충성{' '}
+                          {formatCurrency(dormancyIntel.summary?.loyalDormantCount)}명
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-[#5A6B63] leading-relaxed">
-                      백엔드 <code className="font-mono text-[#1B382E]">dim_customer_master_v6</code> 테이블에 성별·연령대(<code className="font-mono">age_group</code>)·거주권역(<code className="font-mono">region_sido</code>)·수신동의(<code className="font-mono">sms_consent</code>) 정규화가 완료되었으며, API 응답 노출(Ticket 74/75) 즉시 본 영역에 실측 분포가 표시됩니다.
-                    </p>
+
+                    <div className="space-y-1.5 pt-1">
+                      <div className="text-[11px] font-bold text-[#1B382E]">이용횟수 등급별 회원 프로파일</div>
+                      {(dormancyIntel.tiers || []).map((t: any, idx: number) => (
+                        <div
+                          key={t.tierCode || idx}
+                          className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-[#F4F3EE]/60 border border-[#D0C6BB]/40"
+                        >
+                          <span className="font-bold text-[#1B382E]">{t.tierName ?? '-'}</span>
+                          <span className="text-[#5A6B63]">
+                            <strong className="text-[#1B382E]">{formatCurrency(t.totalMembers)}명</strong> ({t.memberShare ?? '-'}%) · 활성{' '}
+                            <strong className="text-[#1E523F]">{formatCurrency(t.activeMembers)}명</strong>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="my-4 p-4 rounded-2xl bg-[#F4F3EE]/80 border border-dashed border-[#D0C6BB] text-xs text-center text-[#5A6B63]">
+                    프로파일 데이터 미수신 (`-`)
                   </div>
                 )}
 
                 <div className="p-3 rounded-xl bg-[#E8F2EE]/70 border border-[#B4C6C1]/60 text-[11px] text-[#1E523F] font-medium">
-                  하단 Win-back 타겟 원장에서 등급·채널·수신동의별 핀셋 타겟팅이 가능합니다.
+                  하단 Win-back 타겟 원장에서 등급·채널별 핀셋 타겟팅이 가능합니다.
                 </div>
               </div>
             </div>
@@ -1802,7 +1842,7 @@ export default function OnlineMembers() {
                               <th className="py-3 px-3 text-right">누적 이용횟수</th>
                               <th className="py-3 px-3 text-center">최초 ~ 최종 활동일</th>
                               <th className="py-3 px-3 text-right">휴면 경과일</th>
-                              <th className="py-3 px-4 text-left">15)고객 마스터 속성 (동의/권역/연령)</th>
+                              <th className="py-3 px-4 text-left">마케팅 동의 / 권역 / 연령</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[#D0C6BB]/30">
@@ -1867,7 +1907,7 @@ export default function OnlineMembers() {
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-[11px] text-[#5A6B63]/60">Ticket 74 연동 대기</span>
+                                    <span className="text-[11px] text-[#5A6B63]/60">-</span>
                                   )}
                                 </td>
                               </tr>

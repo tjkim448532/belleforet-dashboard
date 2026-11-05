@@ -59,6 +59,7 @@
 | **P1 (완료)** | API 보강 | **[Ticket 81] `GET /api/v6/parking/time-analytics` 내 객실 숙박객·판매객실 대비 숙박 차량 비교 및 객실 1개당 평균 차량(물리 175실 기준 · 실투숙 판매객실 기준) 완제품 객체(`roomVehicleComparison`) 추가** | [배포/검증완료] `stayNonGolf.roomVehicleComparison` 완제품(`2026-10`: `175실당 0.83대/실`, `판매객실당 1.46대/실`, `차량당 2.27명/대`) 배포 및 프론트엔드 직결 바인딩 완료 |
 | **P1 (완료)** | 정규 API 보강 | **[Ticket 82] 분양회원 보증금 반환(Redemption) 리스크·이용 만족도(`depositRedemptionSummary`, `usageSatisfactionSummary`) 및 온라인회원 가입➔실구매 전환 퍼널·인기 상품 Top 랭킹·피크 가입 시즌(`purchaseConversionFunnel`, `popularProducts`, `peakJoinSeasonality`) 완제품 추가** | [배포/검증완료] ① 분양회원(`member-quota-ltv` 825구좌, 보증금 `862.8억원`, 고위험 `269구좌/143.5억원`, 선호영업장 Top 10) 및 ② 온라인회원(`online-members` 가입 `34,475명`➔실구매 `28,052명/81.4%`, 인기상품 Top 15, 5월 가정의달 피크) 프론트 직결 완료 |
 | **P1 (완료)** | 정규 API 신설 | **[Ticket 83] 복합 리조트 매출 증감 원인 분석(MECE Root Cause Analysis) 전용 완제품 API 신설 (`GET /api/v6/report/revenue-variance-rca`)** | [배포/검증완료] `period`, `formulaDecomposition`(`방문객수 × 객단가`, 볼륨효과 `-380만원` vs 단가효과 `+143만원`), `segmentIsolation`(`segmentSummaryRows[]`, 콘도 `channelMix[]`, 레저 야외vs실내 `venueVariances[]`, F&B 연계율 `77.7%`/회전율 `1.54회`, 골프 취소율 `25.76%`), `fourFactorVerification`, `structuredReport` 3대 비교모드(`YOY_DOW`/`YOY_DATE`/`MOM`) 프론트 1:1 직결 완료 |
+| **P1 (신규)** | API 보강 | **[Ticket 84] `GET /api/v6/parking/time-analytics` 내 순수 나들이고객(`walkInNonGroup`) 주차할인 등록 매장별 상세(`discountStores[]`) 및 할인 요약(`discountSummary`) 완제품 추가** | 순수 나들이 차량(예: `2026-11-04` `78대`)이 어느 매장(브리스킷346, 남도예담, 투썸플레이스, 벨포레목장, 모토아레나 등)에서 주차할인을 받았는지 매장별 차량 대수·환산 방문객·할인액·체류시간 완제품 배열 제공 요청 |
 
 ---
 
@@ -5334,6 +5335,68 @@ ORDER BY venue_name, rn;
   }
 }
 ```
+
+---
+
+## 84. 🏷️×🚗 [P1 API 보강 요청] Ticket 84 — `GET /api/v6/parking/time-analytics` 내 순수 나들이고객(`walkInNonGroup`) 주차할인 등록 매장별 상세(`discountStores[]`) 및 할인 요약(`discountSummary`) 완제품 제공 요청 (2026-11-05)
+
+### 84-1. 배경 및 실측 감사 결과 (`Stdout` Fact)
+- **`숙박(골프제외)·나들이 입출차 & 외출 분석`** (`/parking-time-analytics`, `src/pages/ParkingTimeAnalytics.tsx`)의 **`[기능 2] 순수 나들이고객 차량 (단체/세미나 제외)`** 섹션에서, 순수 나들이 차량(예: `2026-11-04` 기준 **`78대` / `234명`**)이 **리조트 내 어느 매장(식음·카페·레저·액티비티)에서 주차할인을 받았는지** 매장별 상세 내역을 표시해야 합니다.
+- 현재 프로덕션 API를 실측 점검한 결과:
+  - `GET /api/v6/dashboard/parking-summary` (`summary`)에는 전체 주차할인/사전등록 요약 수치만 존재합니다 (`2026-11-04` 실측: `discountOnlyCars: 71대`, `discountAndPaidCars: 3대`, `paidOnlyCars: 2대`, `uniqueMotoArenaCars: 2대`, `uniqueActivityFnbRegCars: 5대`, `parkingDiscountAmount: 2,496,000원`, `parkingPayAmount: 75,000원`).
+  - `GET /api/v6/parking/time-analytics`의 `walkInNonGroup` 객체에는 `dwellDistribution`과 `hourlyDistribution`만 존재하며, **구체적으로 어떤 매장(예: 브리스킷346, 남도예담, 투썸플레이스, 얼룩말카페, 벨포레목장, 익스트림루지, 미디어아트센터, 모토아레나 등)에서 몇 대의 나들이 차량이 주차할인을 적용받았는지(`discountStores[]`)**가 포함되어 있지 않습니다.
+
+### 84-2. 백엔드 조치 요청 사항 (V6 5대 철칙 & Zero-Proxy 준수)
+1. **`GET /api/v6/parking/time-analytics`의 모든 `walkInNonGroup` 노드(`periodSummary.walkInNonGroup`, `byDayOfWeek[].walkInNonGroup`, `byDayType.weekday.walkInNonGroup`, `byDayType.weekend.walkInNonGroup`, `dailyList[].walkInNonGroup`)에 `discountSummary` 및 `discountStores[]` 완제품 추가**:
+   - 주차관제 할인 등록 원장(매장 단말기/웹 할인 등록 ID 및 사전 차량등록 로그)을 집계하여 아래 규격으로 반환해 주십시오:
+
+```json
+"discountSummary": {
+  "totalDiscountedCars": 74,
+  "discountOnlyCars": 71,
+  "discountAndPaidCars": 3,
+  "paidOnlyCars": 2,
+  "preRegisteredCars": 7,
+  "motoArenaRegCars": 2,
+  "activityFnbRegCars": 5,
+  "totalDiscountAmount": 2496000,
+  "totalPaidAmount": 75000,
+  "discountedCarRatio": 94.9
+},
+"discountStores": [
+  {
+    "storeCode": "STORE_BRISKET",
+    "storeName": "브리스킷346",
+    "categoryName": "식음(F&B)",
+    "discountType": "POS할인등록",
+    "discountedCars": 24,
+    "visitors": 72,
+    "shareRatio": 30.8,
+    "discountCount": 24,
+    "discountAmount": 768000,
+    "avgDwellMinutes": 185,
+    "avgDwellFormatted": "3시간 5분"
+  },
+  {
+    "storeCode": "STORE_NAMDO",
+    "storeName": "남도예담",
+    "categoryName": "식음(F&B)",
+    "discountType": "POS할인등록",
+    "discountedCars": 19,
+    "visitors": 57,
+    "shareRatio": 24.4,
+    "discountCount": 19,
+    "discountAmount": 608000,
+    "avgDwellMinutes": 172,
+    "avgDwellFormatted": "2시간 52분"
+  }
+]
+```
+
+2. **프론트엔드 선제 연동 완료 (`src/pages/ParkingTimeAnalytics.tsx`)**:
+   - `activeWalkInCohort.discountSummary` 및 `activeWalkInCohort.discountStores`(또는 `discountByVenue`)를 1:1 직결 바인딩 완료했습니다.
+   - 백엔드 배포 전까지는 `parking-summary`의 실측 할인·사전등록 요약 카드(`POS 매장 주차할인 적용 차량`, `모토아레나 사전등록 차량`, `식음·액티비티 사전등록 차량`, `총 주차할인 감면액·유료정산액`)를 표시하고, 세부 매장별 리스트는 Fail-Loudly 원칙에 따라 `- (Ticket 84 연동 대기)`로 표출합니다.
+
 
 
 

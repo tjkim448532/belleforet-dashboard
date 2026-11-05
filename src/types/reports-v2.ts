@@ -1404,6 +1404,36 @@ export interface WalkInHourlyDistributionItem {
   exitRatio: number;
 }
 
+export interface WalkInDiscountStoreItem {
+  storeCode?: string;
+  storeName: string;                   // 주차할인 등록 매장명 (예: 브리스킷346, 남도예담, 투썸플레이스, 벨포레목장, 모토아레나 등)
+  venueName?: string;                  // 호환용 매장명 필드
+  categoryName?: string | null;        // 부문 구분 (예: 식음(F&B), 레저·액티비티, 카페·베이커리)
+  discountType?: string | null;        // 할인 유형 (예: POS할인등록, 사전차량등록)
+  discountedCars: number;              // 해당 매장에서 할인 받은 순수 나들이 차량 대수 (대)
+  cars?: number;                       // 호환용 차량 대수 필드
+  visitors: number;                    // 환산 방문객 수 (명, ×3명 완제품)
+  shareRatio: number;                  // 순수 나들이 차량 대비 비중 (%)
+  ratio?: number;                      // 호환용 비중 필드
+  discountCount?: number | null;       // 할인 적용 건수 (건)
+  discountAmount?: number | null;      // 주차할인 감면 금액 (원)
+  avgDwellMinutes?: number | null;     // 해당 매장 할인 차량 평균 체류시간 (분)
+  avgDwellFormatted?: string | null;   // 해당 매장 할인 차량 평균 체류시간 포맷 (예: "2시간 45분")
+}
+
+export interface WalkInDiscountSummary {
+  totalDiscountedCars?: number | null;       // 주차할인 적용 순수 나들이 차량 합계 (대)
+  discountOnlyCars?: number | null;          // 주차할인 전액 감면 차량 (대)
+  discountAndPaidCars?: number | null;       // 주차할인 + 추가 유료결제 차량 (대)
+  paidOnlyCars?: number | null;              // 무할인 유료결제 차량 (대)
+  preRegisteredCars?: number | null;         // 사전 차량등록(모토아레나·액티비티·식음) 차량 (대)
+  motoArenaRegCars?: number | null;          // 모토아레나 사전등록 차량 (대)
+  activityFnbRegCars?: number | null;        // 액티비티·식음 사전등록 차량 (대)
+  totalDiscountAmount?: number | null;       // 주차할인 총 감면 금액 (원)
+  totalPaidAmount?: number | null;           // 유료 주차 정산 금액 (원)
+  discountedCarRatio?: number | null;        // 순수 나들이 차량 중 할인 적용 비율 (%)
+}
+
 export interface WalkInNonGroupCohort {
   cohortLabel: string;
   dayCount: number;
@@ -1429,6 +1459,9 @@ export interface WalkInNonGroupCohort {
   peakExitVisitors: number;
   dwellDistribution: WalkInDwellBucketItem[];
   hourlyDistribution: WalkInHourlyDistributionItem[];
+  discountSummary?: WalkInDiscountSummary | null;
+  discountStores?: WalkInDiscountStoreItem[];
+  discountByVenue?: WalkInDiscountStoreItem[];
 }
 
 export interface ParkingDayOfWeekItem {

@@ -391,32 +391,41 @@ export default function OnlineMembers() {
 
   // ECharts: 고객 충성도 퍼널
   const funnelOptions = {
-    tooltip: { trigger: 'item', formatter: '{b} : {c}명' },
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => `${params.name} : ${formatCurrency(params.value)}명`
+    },
     color: ['#1B382E', '#284F42', '#3D6C5C', '#5F8D7B', '#B59269'],
     series: [
       {
         name: '고객 충성도 퍼널',
         type: 'funnel',
-        left: '8%',
-        width: '58%',
+        top: 14,
+        bottom: 14,
+        left: '4%',
+        width: '46%',
         maxSize: '100%',
+        minSize: '16%',
         sort: 'descending',
-        gap: 3,
+        gap: 6,
         label: {
           show: true,
           position: 'right',
-          formatter: '{b}\n{c}명',
+          formatter: (params: any) => `${params.name} · ${formatCurrency(params.value)}명`,
           fontSize: 12,
           color: '#1B382E',
-          fontWeight: 'bold',
-          lineHeight: 16
+          fontWeight: 'bold'
+        },
+        labelLine: {
+          length: 14,
+          lineStyle: { width: 1.5 }
         },
         itemStyle: { borderColor: '#fff', borderWidth: 1, borderRadius: 6 },
         data: [
           { value: summary.totalActiveMembers || 0, name: '전체 고유 회원' },
           { value: summary.repeatBuyers || 0, name: '2회 이상 재구매' },
           { value: summary.recentActiveMembers || 0, name: '최근 1년 실활동' },
-          { value: summary.trueRepeatBuyers || 0, name: '찐 재방문 (5일+ 간격)' },
+          { value: summary.trueRepeatBuyers || 0, name: '찐 재방문 (5일+)' },
           { value: channelBreakdown.multiChannel || 0, name: '2개+ 채널 복합 VIP' }
         ]
       }
@@ -1524,7 +1533,7 @@ export default function OnlineMembers() {
                     1회 단발 방문객이 진성 재방문 단골 및 복합 채널 VIP로 전환되는 비율
                   </p>
                 </div>
-                <div className="h-[250px] w-full my-2">
+                <div className="h-[280px] w-full my-2">
                   <ReactECharts option={funnelOptions} style={{ height: '100%', width: '100%' }} />
                 </div>
                 <div className="p-3 rounded-xl bg-[#F4F3EE] border border-[#D0C6BB]/60 text-xs text-[#5A6B63] flex items-center justify-between font-financial">

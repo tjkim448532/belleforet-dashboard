@@ -54,6 +54,37 @@ const fmtText = (val: unknown): string => {
   return String(val);
 };
 
+const splitTopLevelClauses = (val: unknown): string[] => {
+  if (val === null || val === undefined || val === '') return [];
+  const str = String(val).trim();
+  if (!str) return [];
+  const result: string[] = [];
+  let current = '';
+  let depth = 0;
+  let i = 0;
+  while (i < str.length) {
+    const ch = str[i];
+    if (ch === '(' || ch === '[') {
+      depth++;
+      current += ch;
+      i++;
+    } else if (ch === ')' || ch === ']') {
+      depth = Math.max(0, depth - 1);
+      current += ch;
+      i++;
+    } else if (depth === 0 && (str.startsWith(' + ', i) || str.startsWith(' · ', i))) {
+      if (current.trim()) result.push(current.trim());
+      current = '';
+      i += 3;
+    } else {
+      current += ch;
+      i++;
+    }
+  }
+  if (current.trim()) result.push(current.trim());
+  return result.length > 0 ? result : [str];
+};
+
 export default function RevenueVarianceRca() {
   const { startDate, endDate, isRange } = useDate();
   const effectiveEndDate = isRange && endDate ? endDate : startDate;
@@ -206,47 +237,52 @@ export default function RevenueVarianceRca() {
       {/* =====================================================================
           1. 매출의 증감 이유는 딱 무엇인가? (결론)
          ===================================================================== */}
-      <div className="bg-white rounded-2xl border-2 border-[#284F42] shadow-xs p-5 md:p-6 space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-[#1B382E]/10 pb-4">
-          <div className="space-y-1.5">
+      <div className="bg-white rounded-2xl border-2 border-[#284F42] shadow-xs p-5 md:p-6 space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-[#1B382E]/10 pb-5">
+          <div className="space-y-2.5">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#284F42] text-white text-xs font-bold">
               <Target size={14} />
               1. 매출 증감 이유 (결론)
             </span>
-            <h2 className="text-lg md:text-xl font-black text-[#1B382E] pt-1">
-              {fmtText(formula?.primaryDriverLabel)}
+            <h2 className="text-lg md:text-xl font-extrabold text-[#1B382E]">
+              조회 기간 전사 매출 · 방문객 · 1인당 객단가 핵심 요약
             </h2>
-            <p className="text-xs md:text-sm text-[#6C7A73]">
-              • 전체 방문객 수:{' '}
-              <strong className="text-[#1B382E]">
-                {fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명
-              </strong>{' '}
-              (
-              <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                {fmtSignedInt(formula?.visitorDiffCount, '명')}
-              </strong>
-              ) &nbsp;|&nbsp; • 손님 1인당 평균 지출:{' '}
-              <strong className="text-[#1B382E]">
-                {fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원
-              </strong>{' '}
-              (
-              <strong className={Number(formula?.spendPerHeadDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
-                {fmtSignedInt(formula?.spendPerHeadDiff, '원')}
-              </strong>
-              )
-            </p>
+            <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-sm md:text-[15px]">
+              <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#1B382E]/10 px-3.5 py-2">
+                <span className="text-[#5A6B63] font-medium">전체 방문객 수: </span>
+                <strong className="text-[#1B382E] font-bold">
+                  {fmtInt(formula?.lyTotalVisitors)}명 ➔ {fmtInt(formula?.tyTotalVisitors)}명
+                </strong>{' '}
+                (
+                <strong className={Number(formula?.visitorDiffCount) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                  {fmtSignedInt(formula?.visitorDiffCount, '명')}
+                </strong>
+                )
+              </div>
+              <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#1B382E]/10 px-3.5 py-2">
+                <span className="text-[#5A6B63] font-medium">손님 1인당 평균 지출: </span>
+                <strong className="text-[#1B382E] font-bold">
+                  {fmtInt(formula?.lySpendPerHead)}원 ➔ {fmtInt(formula?.tySpendPerHead)}원
+                </strong>{' '}
+                (
+                <strong className={Number(formula?.spendPerHeadDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
+                  {fmtSignedInt(formula?.spendPerHeadDiff, '원')}
+                </strong>
+                )
+              </div>
+            </div>
           </div>
 
-          <div className="bg-[#F4F3EE] rounded-xl px-4 py-3 text-right shrink-0">
-            <div className="text-xs text-[#6C7A73] font-semibold">
+          <div className="bg-[#F4F3EE] rounded-2xl px-5 py-4 text-right shrink-0 border border-[#1B382E]/10">
+            <div className="text-xs md:text-sm text-[#5A6B63] font-semibold">
               조회기간 매출 {fmtInt(formula?.tyTotalRevenue)}원 (비교기 {fmtInt(formula?.lyTotalRevenue)}원)
             </div>
             <div
-              className={`text-xl md:text-2xl font-black mt-0.5 flex items-center justify-end gap-1.5 ${
+              className={`text-2xl md:text-3xl font-black mt-1 flex items-center justify-end gap-2 ${
                 isNegative ? 'text-rose-600' : 'text-emerald-700'
               }`}
             >
-              {isNegative ? <TrendingDown size={22} /> : <TrendingUp size={22} />}
+              {isNegative ? <TrendingDown size={26} /> : <TrendingUp size={26} />}
               <span>
                 {fmtSignedInt(formula?.revenueDiffAmount, '원')} ({fmtPct(formula?.revenueGrowthPct)})
               </span>
@@ -254,11 +290,26 @@ export default function RevenueVarianceRca() {
           </div>
         </div>
 
+        {/* 최우선 핵심 원인 요약 박스 (가독성을 위해 문장 단위로 깔끔하게 줄바꿈 표출) */}
+        <div className="rounded-2xl bg-[#F8F7F3] border border-[#1B382E]/15 border-l-4 border-l-[#284F42] p-4 md:p-5 space-y-2.5">
+          <div className="text-xs md:text-sm font-extrabold text-[#284F42]">
+            핵심 증감 원인 종합 진단 (`primaryDriverLabel`)
+          </div>
+          <ul className="space-y-2 text-sm md:text-[15px] text-[#1B382E] font-medium leading-7">
+            {splitTopLevelClauses(formula?.primaryDriverLabel).map((clause, idx) => (
+              <li key={idx} className="flex items-start gap-2">
+                <span className="font-black text-[#284F42] shrink-0">•</span>
+                <span>{clause}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         {/* 공휴일·휴일 일수 차이 보정 요약 배너 (다중일 또는 공휴일 차이 발생 시 직관 표출) */}
         {(isMultiDayPeriod || Number(calFactor?.holidayDiffDays) !== 0) && calFactor && (
-          <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#B59269]/40 p-3.5 text-xs flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
-            <div className="space-y-0.5">
-              <span className="font-black text-[#8C6D46] mr-2">[달력 공휴일 차이 보정]</span>
+          <div className="rounded-xl bg-[#F4F3EE]/80 border border-[#B59269]/40 p-4 text-xs md:text-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5">
+            <div className="space-y-0.5 leading-relaxed">
+              <span className="font-extrabold text-[#8C6D46] mr-2">[달력 공휴일 차이 보정]</span>
               <span className="text-[#1B382E]">
                 법정공휴일 <strong>{fmtInt(calFactor?.lyHolidayDays)}일 ➔ {fmtInt(calFactor?.tyHolidayDays)}일</strong> (
                 <strong className={Number(calFactor?.holidayDiffDays) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
@@ -271,7 +322,7 @@ export default function RevenueVarianceRca() {
                 입니다.
               </span>
             </div>
-            <div className="shrink-0 font-bold text-[#1B382E] bg-white px-3 py-1.5 rounded-lg border border-[#1B382E]/10">
+            <div className="shrink-0 font-bold text-[#1B382E] bg-white px-3.5 py-2 rounded-lg border border-[#1B382E]/10">
               공휴일 차이 보정 실질 증감:{' '}
               <strong className={Number(calFactor?.calendarAdjustedRevenueDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
                 {fmtSignedInt(calFactor?.calendarAdjustedRevenueDiff, '원')}
@@ -283,10 +334,10 @@ export default function RevenueVarianceRca() {
         {/* 매출 증감액 5대 원인 분해 (0-Variance 5단 분해를 쉬운 말로 표출) */}
         {formula && (
           <div>
-            <div className="text-xs font-bold text-[#6C7A73] mb-2">
+            <div className="text-xs md:text-sm font-bold text-[#5A6B63] mb-2.5">
               매출 증감액({fmtSignedInt(formula?.revenueDiffAmount, '원')})의 5가지 원인별 금액
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
                 { label: '① 방문객 수 증감', val: formula?.volumeEffectAmount },
                 { label: '② 객실·골프·레저 단가', val: formula?.coreSegmentPurePriceEffectAmount },
@@ -296,9 +347,9 @@ export default function RevenueVarianceRca() {
               ].map((item, idx) => {
                 const neg = Number(item.val) < 0;
                 return (
-                  <div key={idx} className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-3">
-                    <div className="text-[#6C7A73] font-semibold">{item.label}</div>
-                    <div className={`text-sm font-black mt-1 ${neg ? 'text-rose-600' : 'text-emerald-700'}`}>
+                  <div key={idx} className="rounded-xl bg-[#F4F3EE]/70 border border-[#1B382E]/10 p-3.5">
+                    <div className="text-xs md:text-[13px] text-[#5A6B63] font-bold">{item.label}</div>
+                    <div className={`text-base md:text-lg font-black mt-1.5 ${neg ? 'text-rose-600' : 'text-emerald-700'}`}>
                       {fmtSignedInt(item.val, '원')}
                     </div>
                   </div>
@@ -308,54 +359,67 @@ export default function RevenueVarianceRca() {
           </div>
         )}
 
-        {/* 4대 사업부별 어디서 줄고 늘었나? */}
+        {/* 4대 사업부별 어디서 줄고 늘었나? (가독성을 위해 2열 와이드 카드 배치) */}
         <div>
-          <div className="text-xs font-bold text-[#6C7A73] mb-2.5">
+          <div className="text-xs md:text-sm font-bold text-[#5A6B63] mb-2.5">
             4대 사업부별 매출 증감 (어느 부문에서 얼마가 줄고 늘었는가)
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {segmentSummaryRows.map((row: any, idx: number) => {
               const neg = Number(row?.diffAmount) < 0;
+              const diagClauses = splitTopLevelClauses(row?.isolationDiagnosis);
               return (
                 <div
                   key={idx}
-                  className={`rounded-xl p-3.5 border ${
+                  className={`rounded-2xl p-4 md:p-5 border ${
                     neg
-                      ? 'bg-rose-50/50 border-rose-200'
+                      ? 'bg-rose-50/40 border-rose-200'
                       : 'bg-emerald-50/40 border-emerald-200'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-xs font-black text-[#1B382E]">
-                    <span>{fmtText(row?.segmentName)}</span>
-                    <span className={neg ? 'text-rose-600' : 'text-emerald-700'}>
-                      {fmtPct(row?.growthPct)}
-                    </span>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 pb-2.5 border-b border-[#1B382E]/10">
+                    <div>
+                      <div className="text-sm md:text-base font-extrabold text-[#1B382E]">
+                        {fmtText(row?.segmentName)}
+                      </div>
+                      <div className="text-xs text-[#5A6B63] mt-0.5">
+                        비교기 {fmtInt(row?.lyRevenue)}원 ➔ 당기 {fmtInt(row?.tyRevenue)}원
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div
+                        className={`text-lg md:text-xl font-black ${
+                          neg ? 'text-rose-600' : 'text-emerald-700'
+                        }`}
+                      >
+                        {fmtSignedInt(row?.diffAmount, '원')}
+                      </div>
+                      <div className={`text-xs font-bold ${neg ? 'text-rose-600' : 'text-emerald-700'}`}>
+                        증감률 {fmtPct(row?.growthPct)}
+                      </div>
+                    </div>
                   </div>
-                  <div
-                    className={`text-base font-black mt-1 ${
-                      neg ? 'text-rose-600' : 'text-emerald-700'
-                    }`}
-                  >
-                    {fmtSignedInt(row?.diffAmount, '원')}
-                  </div>
-                  <div className="text-[11px] text-[#6C7A73] mt-0.5">
-                    {fmtInt(row?.lyRevenue)}원 ➔ {fmtInt(row?.tyRevenue)}원
-                  </div>
-                  <p className="text-xs text-[#1B382E] mt-2 pt-2 border-t border-[#1B382E]/10 leading-snug font-semibold">
-                    {fmtText(row?.isolationDiagnosis)}
-                  </p>
+
+                  <ul className="mt-3 space-y-1.5 text-[13px] md:text-sm text-[#1B382E]/90 font-normal leading-relaxed">
+                    {diagClauses.map((c, cIdx) => (
+                      <li key={cIdx} className="flex items-start gap-1.5">
+                        <span className="font-bold text-[#284F42] shrink-0">•</span>
+                        <span>{c}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               );
             })}
           </div>
 
           {segmentImpactBullets.length > 0 && (
-            <div className="mt-3 rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-3.5 space-y-1.5">
-              <div className="text-xs font-black text-[#284F42]">부문별 심층 원인 진단 (백엔드 완제품)</div>
-              <ul className="space-y-1.5 text-xs text-[#1B382E] leading-relaxed">
+            <div className="mt-4 rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-4 space-y-2">
+              <div className="text-xs md:text-sm font-black text-[#284F42]">부문별 심층 원인 진단 (백엔드 완제품)</div>
+              <ul className="space-y-2 text-[13px] md:text-sm text-[#1B382E]/90 leading-relaxed">
                 {segmentImpactBullets.map((bullet, idx) => (
-                  <li key={idx} className="flex items-start gap-1.5">
-                    <span className="font-black text-[#284F42] mt-0.5">•</span>
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="font-black text-[#284F42] shrink-0">•</span>
                     <span>{bullet}</span>
                   </li>
                 ))}
@@ -787,25 +851,26 @@ export default function RevenueVarianceRca() {
       {/* =====================================================================
           3. 외부 환경 및 주요 운영 지표 (한 줄 요약 — 6대 카드)
          ===================================================================== */}
-      <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5 space-y-3">
-        <div className="flex items-center gap-1.5 text-xs font-black text-[#6C7A73]">
-          <Info size={14} className="text-[#284F42]" />
-          <span>3. 외부 환경 및 주요 운영 지표 (한 줄 요약)</span>
+      <div className="bg-white rounded-2xl border border-[#1B382E]/10 shadow-xs p-5 md:p-6 space-y-4">
+        <div className="flex items-center gap-1.5 text-sm font-black text-[#284F42]">
+          <Info size={16} className="text-[#284F42]" />
+          <span>3. 외부 환경 및 주요 운영 지표 요약</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs">
           {/* [카드 1] 날씨 / 공휴일 */}
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex flex-col justify-between gap-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 공휴일</span>
-              <strong className="text-[#1B382E] text-right">
+          <div className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-4 flex flex-col justify-between gap-2">
+            <div className="space-y-1.5">
+              <div className="text-xs font-bold text-[#6C7A73]">날씨 / 공휴일</div>
+              <div className="text-[13px] md:text-sm font-bold text-[#1B382E] leading-relaxed">
                 {isMultiDayPeriod ? (
                   <>
                     우천 {fmtInt(extWeather?.lyRainyDays)}➔{fmtInt(extWeather?.tyRainyDays)}일 (주말·휴일우천{' '}
                     {fmtInt(extWeather?.lyRedDayRainyDays)}➔{fmtInt(extWeather?.tyRedDayRainyDays)}일 · 평일우천{' '}
-                    {fmtInt(extWeather?.lyWeekdayRainyDays)}➔{fmtInt(extWeather?.tyWeekdayRainyDays)}일) · 공휴일{' '}
-                    {fmtInt(extWeather?.lyHolidayDays ?? calFactor?.lyHolidayDays)}➔
-                    {fmtInt(extWeather?.tyHolidayDays ?? calFactor?.tyHolidayDays)}일(
+                    {fmtInt(extWeather?.lyWeekdayRainyDays)}➔{fmtInt(extWeather?.tyWeekdayRainyDays)}일)
+                    <br />
+                    공휴일 {fmtInt(extWeather?.lyHolidayDays ?? calFactor?.lyHolidayDays)}➔
+                    {fmtInt(extWeather?.tyHolidayDays ?? calFactor?.tyHolidayDays)}일 (
                     {fmtSignedInt(extWeather?.holidayDiffDays ?? calFactor?.holidayDiffDays, '일')}, 달력효과{' '}
                     {fmtSignedInt(extWeather?.calendarShiftEffectAmount ?? calFactor?.calendarShiftEffectAmount, '원')})
                   </>
@@ -818,10 +883,10 @@ export default function RevenueVarianceRca() {
                     {fmtInt(extWeather?.lyHolidayDays ?? calFactor?.lyHolidayDays)}일)
                   </>
                 )}
-              </strong>
+              </div>
             </div>
             {Number(calFactor?.calendarShiftEffectAmount ?? extWeather?.calendarShiftEffectAmount ?? 0) !== 0 && (
-              <div className="text-[11px] font-bold text-[#8C6D46] bg-white/80 px-2.5 py-1 rounded border border-[#B59269]/40 text-right">
+              <div className="text-xs font-bold text-[#8C6D46] bg-white/90 px-3 py-1.5 rounded-lg border border-[#B59269]/40">
                 달력 시프트 효과:{' '}
                 {fmtSignedInt(calFactor?.calendarShiftEffectAmount ?? extWeather?.calendarShiftEffectAmount, '원')} ➔
                 달력 보정 실질 영업증감:{' '}
@@ -831,23 +896,26 @@ export default function RevenueVarianceRca() {
           </div>
 
           {/* [카드 2] 경쟁사 만실 여부 */}
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">경쟁사 만실 여부</span>
-            <strong className="text-[#1B382E] text-right">
+          <div className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-4 flex flex-col justify-between gap-1.5">
+            <div className="text-xs font-bold text-[#6C7A73]">경쟁사 만실 여부</div>
+            <div className="text-[13px] md:text-sm font-bold text-[#1B382E] leading-relaxed">
               충청 4사 만실 {fmtInt(compMarket?.soldOutResortCount)}/{fmtInt(compMarket?.monitoredResortCount)}곳
-              (최저가 {fmtInt(compMarket?.competitorAvgMinPrice)}원, 동요일 30일비{' '}
-              {fmtPctOne(
-                compMarket?.competitorPriceSurgeRatioPct ?? compMarket?.competitorSameClassSurgeRatioPct,
-                true
-              )}
-              )
-            </strong>
+              <div className="text-xs font-medium text-[#4A5D54] mt-0.5">
+                평균 최저가 {fmtInt(compMarket?.competitorAvgMinPrice)}원 · 동요일 30일 대비{' '}
+                <strong className="text-[#1B382E]">
+                  {fmtPctOne(
+                    compMarket?.competitorPriceSurgeRatioPct ?? compMarket?.competitorSameClassSurgeRatioPct,
+                    true
+                  )}
+                </strong>
+              </div>
+            </div>
           </div>
 
           {/* [카드 3] 콘도 열쇠 가동·수익 */}
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">콘도 열쇠 가동·수익</span>
-            <strong className="text-[#1B382E] text-right">
+          <div className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-4 flex flex-col justify-between gap-1.5">
+            <div className="text-xs font-bold text-[#6C7A73]">콘도 열쇠 가동 · 수익</div>
+            <div className="text-[13px] md:text-sm font-bold text-[#1B382E] leading-relaxed">
               물리열쇠 {fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
               {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}개 (
               {fmtPctOne(
@@ -859,31 +927,39 @@ export default function RevenueVarianceRca() {
               {fmtPctOne(
                 condoDetail?.expectedKeyOccPct ?? calFactor?.regimeDynamicThresholds?.expectedKeyOccPct
               )}
-              ) · 열쇠당 {fmtInt(condoDetail?.tyKeyYield)}원 ({fmtPct(condoDetail?.keyYieldGrowthPct)})
-            </strong>
+              )
+              <div className="text-xs font-medium text-[#4A5D54] mt-0.5">
+                열쇠당 수익(Key Yield) <strong className="text-[#1B382E]">{fmtInt(condoDetail?.tyKeyYield)}원</strong> (
+                {fmtPct(condoDetail?.keyYieldGrowthPct)})
+              </div>
+            </div>
           </div>
 
           {/* [카드 4] 골퍼 미숙박 이탈 */}
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">골퍼 미숙박 이탈</span>
-            <strong className="text-[#1B382E] text-right">
+          <div className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-4 flex flex-col justify-between gap-1.5">
+            <div className="text-xs font-bold text-[#6C7A73]">골퍼 미숙박 이탈</div>
+            <div className="text-[13px] md:text-sm font-bold text-[#1B382E] leading-relaxed">
               진성타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
               <span className="text-rose-600">
                 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 미숙박
-              </span>{' '}
-              (장기체류 워크인{' '}
-              {fmtInt(
-                compMarket?.unconvertedInternalStayDemand?.longDwell4hPlusWalkinCars ??
-                  parkingBehavior?.tyWalkinLongDwell4hPlusCars
-              )}
-              대)
-            </strong>
+              </span>
+              <div className="text-xs font-medium text-[#4A5D54] mt-0.5">
+                4시간+ 장기체류 워크인 차량:{' '}
+                <strong className="text-[#1B382E]">
+                  {fmtInt(
+                    compMarket?.unconvertedInternalStayDemand?.longDwell4hPlusWalkinCars ??
+                      parkingBehavior?.tyWalkinLongDwell4hPlusCars
+                  )}
+                  대
+                </strong>
+              </div>
+            </div>
           </div>
 
           {/* [카드 5] 투숙객 외부 외출 */}
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">투숙객 외부 외출</span>
-            <strong className="text-[#1B382E] text-right">
+          <div className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-4 flex flex-col justify-between gap-1.5">
+            <div className="text-xs font-bold text-[#6C7A73]">투숙객 외부 외출</div>
+            <div className="text-[13px] md:text-sm font-bold text-[#1B382E] leading-relaxed">
               외출 {fmtInt(fnbDetail?.tyStayOutingCount ?? parkingBehavior?.tyStayOutingCount)}회 (외출률{' '}
               <span className="text-rose-600">
                 {fmtPctOne(
@@ -892,30 +968,34 @@ export default function RevenueVarianceRca() {
                     calFactor?.regimeDynamicThresholds?.actualStayOutingRatePct
                 )}
               </span>
-              , 평균 {fmtInt(fnbDetail?.tyStayAvgOutingMinutes ?? parkingBehavior?.tyStayAvgOutingMinutes)}분 | 경보 기준{' '}
-              {fmtPctOne(
-                fnbDetail?.outingAlertThresholdPct ??
-                  parkingBehavior?.outingAlertThresholdPct ??
-                  calFactor?.regimeDynamicThresholds?.outingAlertThresholdPct
-              )}
               )
-            </strong>
+              <div className="text-xs font-medium text-[#4A5D54] mt-0.5">
+                평균 외출 {fmtInt(fnbDetail?.tyStayAvgOutingMinutes ?? parkingBehavior?.tyStayAvgOutingMinutes)}분 · 경보 기준{' '}
+                {fmtPctOne(
+                  fnbDetail?.outingAlertThresholdPct ??
+                    parkingBehavior?.outingAlertThresholdPct ??
+                    calFactor?.regimeDynamicThresholds?.outingAlertThresholdPct
+                )}
+              </div>
+            </div>
           </div>
 
           {/* [카드 6] 정산 무결성 / 후정산 */}
-          <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">정산 무결성 / 후정산</span>
-            <strong className="text-[#1B382E] text-right">
-              오차{' '}
+          <div className="rounded-xl bg-[#F4F3EE]/60 border border-[#1B382E]/10 p-4 flex flex-col justify-between gap-1.5">
+            <div className="text-xs font-bold text-[#6C7A73]">정산 무결성 / 후정산</div>
+            <div className="text-[13px] md:text-sm font-bold text-[#1B382E] leading-relaxed">
+              정산 오차{' '}
               {fmtInt(
                 integrityFactor?.reconciliationDeltaWon ??
                   integrityFactor?.gatekeeperDeltaWon ??
                   integrityFactor?.gatekeeperDeltaAmount
               )}
-              원 (미분류 {fmtInt(integrityFactor?.unmappedCandidateCount)}건) · 후정산 대기{' '}
-              {fmtInt(integrityFactor?.cityLedgerPendingCount)}건 (
-              {fmtInt(integrityFactor?.cityLedgerPendingAmount ?? integrityFactor?.b2bPostSettlementPendingAmount)}원)
-            </strong>
+              원 (미분류 {fmtInt(integrityFactor?.unmappedCandidateCount)}건)
+              <div className="text-xs font-medium text-[#4A5D54] mt-0.5">
+                후정산 대기 {fmtInt(integrityFactor?.cityLedgerPendingCount)}건 (
+                {fmtInt(integrityFactor?.cityLedgerPendingAmount ?? integrityFactor?.b2bPostSettlementPendingAmount)}원)
+              </div>
+            </div>
           </div>
         </div>
       </div>

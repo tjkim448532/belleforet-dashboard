@@ -498,72 +498,71 @@ export default function RevenueVarianceRca() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
           {/* [카드 1] 날씨 / 공휴일 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 공휴일</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">날씨 / 휴일</span>
             <strong className="text-[#1B382E] text-right">
-              {fmtText(extWeather?.tyWeatherDesc)} {fmtText(extWeather?.tyTempMax)}°C (비교기{' '}
-              {fmtText(extWeather?.lyWeatherDesc)} {fmtText(extWeather?.lyTempMax)}°C) · 공휴일{' '}
+              올해 {fmtText(extWeather?.tyWeatherDesc)}({fmtText(extWeather?.tyTempMax)}°C) / 비교일{' '}
+              {fmtText(extWeather?.lyWeatherDesc)}({fmtText(extWeather?.lyTempMax)}°C) · 휴일{' '}
               {fmtInt(calFactor?.tyHolidayDays)}일
             </strong>
           </div>
 
           {/* [카드 2] 경쟁사 만실 여부 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">경쟁사 만실 여부</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">주변 경쟁 리조트</span>
             <strong className="text-[#1B382E] text-right">
-              충청 4사 만실 {fmtInt(compMarket?.soldOutResortCount)}/{fmtInt(compMarket?.monitoredResortCount)}곳 (최저가{' '}
-              {fmtInt(compMarket?.competitorAvgMinPrice)}원, 동요일비{' '}
+              충청 4사 중 만실 {fmtInt(compMarket?.soldOutResortCount)}곳 · 경쟁사 평균{' '}
+              {fmtInt(compMarket?.competitorAvgMinPrice)}원 (평소보다{' '}
               {fmtPctOne(compMarket?.competitorSameClassSurgeRatioPct, true)})
             </strong>
           </div>
 
-          {/* [카드 3] 콘도 열쇠 가동·수익 */}
+          {/* [카드 3] 콘도 객실 가동률·단가 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">콘도 열쇠 가동·수익</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">콘도 가동률 · 방당 매출</span>
             <strong className="text-[#1B382E] text-right">
-              물리열쇠{' '}
+              가동률{' '}
               {fmtPctOne(
                 calFactor?.regimeDynamicThresholds?.actualKeyOccPct ??
                   condoDetail?.tyPhysicalKeyOccPct ??
                   compMarket?.belleforetPhysicalKeyOccPct
               )}{' '}
-              ({fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}/
-              {fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}키, 기대{' '}
-              {fmtPctOne(calFactor?.regimeDynamicThresholds?.expectedKeyOccPct)}) · 열쇠당{' '}
+              ({fmtInt(condoDetail?.physicalKeyCapacity ?? compMarket?.belleforetPhysicalKeyCapacity)}실 중{' '}
+              {fmtInt(condoDetail?.tyOccupiedPhysicalKeys)}실 판매) · 방 1개당{' '}
               {fmtInt(condoDetail?.tyKeyYield)}원 ({fmtPct(condoDetail?.keyYieldGrowthPct)})
             </strong>
           </div>
 
           {/* [카드 4] 골퍼 미숙박 이탈 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">골퍼 미숙박 이탈</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">골퍼 미숙박 귀가</span>
             <strong className="text-[#1B382E] text-right">
-              진성타겟 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
+              숙박유력 골퍼 {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionTargetTeams)}팀 중{' '}
               <span className="text-rose-600">
-                {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 미숙박
+                {fmtInt(compMarket?.unconvertedInternalStayDemand?.coreStayConversionNonStayTeams)}팀 안 자고 귀가
               </span>
             </strong>
           </div>
 
           {/* [카드 5] 투숙객 외부 외출 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">투숙객 외부 외출</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">숙박객 외부 외출</span>
             <strong className="text-[#1B382E] text-right">
-              외출 {fmtInt(parkingBehavior?.tyStayOutingCount)}회 (
+              단지 밖 외출 {fmtInt(parkingBehavior?.tyStayOutingCount)}회 (숙박차량의{' '}
               <span className="text-rose-600">
                 {fmtPctOne(
                   parkingBehavior?.tyStayOutingRatePct ??
                     calFactor?.regimeDynamicThresholds?.actualStayOutingRatePct
                 )}
               </span>
-              , 경보 기준 {fmtPctOne(calFactor?.regimeDynamicThresholds?.outingAlertThresholdPct)})
+              )
             </strong>
           </div>
 
           {/* [카드 6] 정산 무결성 / 후정산 */}
           <div className="rounded-lg bg-[#F4F3EE]/60 px-3.5 py-2.5 flex items-center justify-between gap-2">
-            <span className="text-[#6C7A73] font-semibold shrink-0">정산 무결성 / 후정산</span>
+            <span className="text-[#6C7A73] font-semibold shrink-0">정산 오차 / 후정산</span>
             <strong className="text-[#1B382E] text-right">
-              오차 {fmtInt(integrityFactor?.reconciliationDeltaWon)}원 · 후정산 대기{' '}
+              정산 오차 {fmtInt(integrityFactor?.reconciliationDeltaWon)}원 · 단체 미수금{' '}
               {fmtInt(integrityFactor?.cityLedgerPendingAmount)}원 ({fmtInt(integrityFactor?.cityLedgerPendingCount)}건)
             </strong>
           </div>

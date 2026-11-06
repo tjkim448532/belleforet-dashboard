@@ -652,7 +652,18 @@ export default function RevenueVarianceRca() {
           <div className="rounded-lg bg-slate-50 p-3 border border-slate-200">
             <div className="text-slate-500 font-semibold">주변 경쟁 리조트 · 정산 점검</div>
             <div className="font-bold text-[#1B382E] mt-1">
-              충청 4곳 중 만실 {fmtInt(compMarket?.soldOutResortCount)}곳 (최저가 평균 {fmtInt(compMarket?.competitorAvgMinPrice)}원)
+              {Number(period?.dayCount) > 1 ? (
+                <>
+                  충청 4곳 평균 만실률 {fmtPctOne(compMarket?.avgCompetitorSoldOutRatePct)} (최근{' '}
+                  {fmtInt(compMarket?.matchedSnapshotDays)}일 수집 · 최저가 평균{' '}
+                  {fmtInt(compMarket?.competitorAvgMinPrice)}원)
+                </>
+              ) : (
+                <>
+                  충청 4곳 중 당일 만실 {fmtInt(compMarket?.soldOutResortCount)}곳 (최저가 평균{' '}
+                  {fmtInt(compMarket?.competitorAvgMinPrice)}원)
+                </>
+              )}
             </div>
             <div className="text-[11px] text-slate-500 mt-0.5">
               일마감 정산 오차{' '}
@@ -661,7 +672,8 @@ export default function RevenueVarianceRca() {
                   integrityFactor?.gatekeeperDeltaWon ??
                   integrityFactor?.gatekeeperDeltaAmount
               )}
-              원 · 외상 대기 {fmtInt(integrityFactor?.cityLedgerPendingCount)}건
+              원 · 미분류 {fmtInt(integrityFactor?.unmappedCandidateCount)}건 · 외상 대기{' '}
+              {fmtInt(integrityFactor?.cityLedgerPendingCount)}건
             </div>
           </div>
         </div>
@@ -673,7 +685,7 @@ export default function RevenueVarianceRca() {
             onClick={() => setOpenEnvAccordion((prev) => !prev)}
             className="w-full flex items-center justify-between text-xs font-bold text-slate-600 hover:text-[#1B382E] py-1 cursor-pointer"
           >
-            <span>휴일·평일 평균 매출 및 주요 단체 행사 상세 {openEnvAccordion ? '접기' : '보기'}</span>
+            <span>휴일·평일 평균 매출 및 주변 리조트·단체 행사 상세 {openEnvAccordion ? '접기' : '보기'}</span>
             {openEnvAccordion ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
           </button>
 
@@ -703,6 +715,19 @@ export default function RevenueVarianceRca() {
                       {fmtInt(extWeather?.tyRainyDayAvgRevenue)}원
                     </strong>
                   </div>
+                  {Array.isArray(compMarket?.competitorResorts) && compMarket.competitorResorts.length > 0 && (
+                    <div className="pt-1.5 mt-1.5 border-t border-slate-200 text-slate-600">
+                      <span className="font-semibold text-[#1B382E]">
+                        • 주변 4곳 마감일수 (수집 {fmtInt(compMarket?.matchedSnapshotDays)}일 기준):{' '}
+                      </span>
+                      {compMarket.competitorResorts
+                        .map(
+                          (r: any) =>
+                            `${fmtText(r?.resortName)} ${fmtInt(r?.soldOutDays)}일(${fmtPctOne(r?.soldOutRatePct)})`
+                        )
+                        .join(' · ')}
+                    </div>
+                  )}
                 </div>
 
                 {banquetTopEvents && (

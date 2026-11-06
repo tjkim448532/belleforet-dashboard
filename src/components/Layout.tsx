@@ -83,7 +83,7 @@ export default function Layout() {
   // 전사 공통 대시보드 (모든 로그인 임직원 공통 노출)
   const commonMenuItems = [
     { name: '전사 종합 매출 & TRevPAR', path: '/', icon: <LayoutDashboard size={20} /> },
-    { name: '매출 증감 원인 분석 (MECE RCA)', path: '/revenue-variance-rca', icon: <Activity size={20} /> },
+    { name: '매출 증감 원인 분석', path: '/revenue-variance-rca', icon: <Activity size={20} /> },
     { name: '부문별 주간정산 & 요일별 매출', path: '/matrix-weekly', icon: <Database size={20} /> },
     { name: '영업장별 월별 추이 & 시즌성', path: '/facility-trend', icon: <TrendingUp size={20} /> },
     { name: '숙박(골프제외)·나들이 입출차 & 외출 분석', path: '/parking-time-analytics', icon: <Car size={20} /> },

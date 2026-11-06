@@ -80,6 +80,22 @@ export default function RevenueVarianceRca() {
     setOpenSegmentAccordion((prev) => ({ ...prev, [code]: !prev[code] }));
   };
 
+  const fetchAiBriefing = async (queryKey: string) => {
+    setAiLoading(true);
+    try {
+      const res = await secureFetcher(
+        `${API_BASE}/api/v6/report/revenue-variance-rca?startDate=${startDate}&endDate=${effectiveEndDate}&compareMode=${compareMode}&aiBriefing=1`
+      ).catch(() => null);
+
+      if (res && res.success) {
+        setRcaData(res.data || res);
+        setAiFetchedKey(queryKey);
+      }
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const fetchRcaData = async () => {
     setLoading(true);
     try {
@@ -95,6 +111,10 @@ export default function RevenueVarianceRca() {
     } finally {
       setLoading(false);
     }
+
+    if (openAiBriefing) {
+      fetchAiBriefing(currentQueryKey);
+    }
   };
 
   const handleToggleAiBriefing = async () => {
@@ -102,19 +122,7 @@ export default function RevenueVarianceRca() {
     setOpenAiBriefing(nextOpen);
 
     if (nextOpen && aiFetchedKey !== currentQueryKey) {
-      setAiLoading(true);
-      try {
-        const res = await secureFetcher(
-          `${API_BASE}/api/v6/report/revenue-variance-rca?startDate=${startDate}&endDate=${effectiveEndDate}&compareMode=${compareMode}&aiBriefing=1`
-        ).catch(() => null);
-
-        if (res && res.success) {
-          setRcaData(res.data || res);
-          setAiFetchedKey(currentQueryKey);
-        }
-      } finally {
-        setAiLoading(false);
-      }
+      await fetchAiBriefing(currentQueryKey);
     }
   };
 

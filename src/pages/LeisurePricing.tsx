@@ -9,6 +9,7 @@ import {
   Phone,
   ShieldCheck,
   AlertCircle,
+  AlertTriangle,
   ExternalLink,
   Tag,
   Percent,
@@ -232,6 +233,14 @@ export default function LeisurePricing() {
     { key: 'member', label: '분양회원 우대' },
     { key: 'free', label: '36개월 미만 무료' },
   ];
+
+  // Fail-Loudly Guard: Check if backend API is returning outdated dummy price (e.g. 18,000 for mountain cart instead of official 22,500/30,000)
+  const isOutdatedBackend = useMemo(() => {
+    return facilities.some(f => 
+      (f.id === 'MOUNTAIN_CART' || f.name.includes('마운틴카트')) && 
+      (f.representativePrice?.includes('18,000') || f.regularPrices?.some(rp => rp.priceWeekday?.includes('18,000')))
+    );
+  }, [facilities]);
 
   // Filtering Logic
   const filteredFacilities = useMemo(() => {
@@ -460,6 +469,26 @@ export default function LeisurePricing() {
             </div>
           </div>
         </div>
+
+        {/* Outdated Backend Crawler Warning (Fail-Loudly) */}
+        {isOutdatedBackend && (
+          <div className="bg-[#8B2635]/10 border border-[#8B2635]/30 rounded-2xl p-4 text-xs text-[#8B2635] flex flex-col sm:flex-row sm:items-center justify-between gap-3 font-semibold">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle size={18} className="shrink-0 text-[#8B2635]" />
+              <div className="space-y-0.5">
+                <p className="font-bold">
+                  ⚠️ 백엔드 크롤러 실측 갱신 대기 중 (Ticket 86)
+                </p>
+                <p className="text-[11px] text-[#8B2635]/90 font-normal">
+                  현재 백엔드 API(<code>/api/v6/leisure/pricing-catalog</code>)가 공식 홈페이지 최신 크롤링 데이터가 아닌 과거 레거시 캐시 데이터를 반환하고 있습니다. 공식 홈페이지 최신 실측치 반영을 위해 백엔드 배포(Ticket 86)가 대기 중입니다.
+                </p>
+              </div>
+            </div>
+            <span className="text-[10px] bg-[#8B2635]/20 px-2.5 py-1 rounded-lg font-mono font-bold shrink-0 self-start sm:self-center">
+              백엔드 배포 대기
+            </span>
+          </div>
+        )}
 
         {/* 2. Controls & Filter Card */}
         <div className="bg-white rounded-3xl p-6 lg:p-7 border border-[#D0C6BB]/75 shadow-[0_4px_24px_rgba(40,79,66,0.06)] space-y-5">

@@ -5512,33 +5512,74 @@ flowchart TD
     "facilities": [
       {
         "facilityCode": "MOUNTAIN_CART",
-        "facilityName": "마운틴카트 (익스트림루지)",
+        "facilityName": "마운틴카트 (그랜드포렛 & 미니포렛)",
         "mainCategory": "leisure",
         "mainCategoryLabel": "레져",
         "subCategory": "어트랙션",
-        "representativePrice": "정상가 18,000원 / 도민·투숙객 15,000원",
-        "operatingHours": "10:00 ~ 17:30 (발권마감 17:00)",
+        "representativePrice": "그랜드포렛 정상가 30,000원 (도민·투숙객 22,500원) / 미니포렛 5,000원",
+        "operatingHours": "10:00 ~ 17:30 (브레이크: 주중 12:30~13:30, 주말 12:00~13:00)",
         "closedDay": "연중무휴 (기상악화 시 탄력운영)",
         "contact": "043-926-1000",
-        "discountBadges": ["충북도민 우대", "콘도 투숙객 할인", "분양회원 우대"],
+        "discountBadges": ["충북도민 우대 22,500원", "콘도 투숙객 22,500원", "콘도회원 15,000~21,000원"],
         "regularPrices": [
-          { "name": "루지 1회권 (대인)", "priceWeekday": "18,000원", "priceWeekend": "20,000원", "note": "신장 120cm 이상 단독 탑승" },
-          { "name": "루지 2회권 (대인)", "priceWeekday": "28,000원", "priceWeekend": "32,000원", "note": "동일인 연속 탑승 기준" },
-          { "name": "동반 탑승권 (소인)", "priceWeekday": "5,000원", "priceWeekend": "5,000원", "note": "신장 85cm~120cm 보호자 동반" }
+          { "name": "마운틴카트 그랜드포렛 (성인 스릴 코스)", "priceWeekday": "30,000원", "priceWeekend": "30,000원", "note": "신장 150cm 이상 단독 탑승 (전체 3km, 약 10분 주행)" },
+          { "name": "마운틴카트 미니포렛 (어린이 전용 코스)", "priceWeekday": "5,000원", "priceWeekend": "5,000원", "note": "단독 130cm 이상 / 동반 36개월~129cm 보호자 탑승" }
         ],
         "discounts": [
-          { "target": "충북도민 / 증평군민", "rate": "20%", "discountPrice": "14,400원~", "condition": "신분증 지참 필수 (본인 한정)" },
-          { "target": "콘도 투숙객", "rate": "15%", "discountPrice": "15,300원~", "condition": "객실 키 또는 예약 문자 제시" },
-          { "target": "분양회원", "rate": "30%", "discountPrice": "12,600원~", "condition": "회원카드 지참 (동반 4인)" }
+          { "target": "충북도민 / 37사단 군인 / 콘도숙박할인", "rate": "25%", "discountPrice": "22,500원", "condition": "신분증 또는 객실 예약문자 확인" },
+          { "target": "콘도회원 (그린)", "rate": "30%", "discountPrice": "21,000원", "condition": "회원카드 지참" },
+          { "target": "콘도회원 (레드 / 화이트)", "rate": "50%", "discountPrice": "15,000원", "condition": "회원카드 지참" }
         ],
         "requirements": [
-          "신장 120cm 이상, 10세 이상 단독 탑승 가능",
-          "음주자, 임산부, 65세 이상 고령자 탑승 제한"
+          "그랜드포렛: 신장 150cm 이상 탑승 가능",
+          "미니포렛: 단독 130cm 이상, 동반 36개월 이상 / 85cm~129cm",
+          "음주자, 임산부, 노약자 탑승 제한"
         ],
         "notes": [
+          "전기고카트 속도제한 30km 리미티드 제한 적용",
           "우천 또는 강설 시 안전을 위해 운행이 중단될 수 있습니다."
         ],
-        "officialUrl": "https://belleforetresort.com/activity/1"
+        "officialUrl": "https://belleforetresort.com/attraction/10"
+      },
+      {
+        "facilityCode": "SLED",
+        "facilityName": "사계절 썰매장",
+        "mainCategory": "leisure",
+        "mainCategoryLabel": "레져",
+        "subCategory": "어트랙션",
+        "representativePrice": "무제한 썰매 대인: 주중 20,000원 / 주말 25,000원",
+        "operatingHours": "10:00 ~ 17:00",
+        "closedDay": "연중무휴",
+        "contact": "043-926-1000",
+        "discountBadges": ["무제한 이용", "소인 할인"],
+        "regularPrices": [
+          { "name": "무제한 썰매 (대인: 14세 이상)", "priceWeekday": "20,000원", "priceWeekend": "25,000원", "note": "종일 무제한 탑승" },
+          { "name": "무제한 썰매 (소인: 4세~초등학교 6학년)", "priceWeekday": "17,000원", "priceWeekend": "20,000원", "note": "신장 및 연령 확인" }
+        ],
+        "discounts": [],
+        "requirements": ["4세 미만 탑승 불가"],
+        "notes": ["기상 상황에 따라 탄력 운영"],
+        "officialUrl": "https://belleforetresort.com/attraction/4"
+      },
+      {
+        "facilityCode": "MEDIA_ART",
+        "facilityName": "미디어아트센터",
+        "mainCategory": "leisure",
+        "mainCategoryLabel": "레져",
+        "subCategory": "전시",
+        "representativePrice": "성인 17,000원 / 청소년 13,000원",
+        "operatingHours": "10:00 ~ 18:00 (입장마감 17:00)",
+        "closedDay": "연중무휴",
+        "contact": "043-926-1000",
+        "discountBadges": ["청소년 할인", "도민 우대"],
+        "regularPrices": [
+          { "name": "성인 (20세 이상)", "priceWeekday": "17,000원", "priceWeekend": "17,000원", "note": "상설 미디어 전시 관람권" },
+          { "name": "청소년 (14세~19세)", "priceWeekday": "13,000원", "priceWeekend": "13,000원", "note": "학생증 지참" }
+        ],
+        "discounts": [],
+        "requirements": [],
+        "notes": [],
+        "officialUrl": "https://belleforetresort.com/attraction/6"
       }
     ],
     "specialOffers": [

@@ -994,56 +994,6 @@ export default function StrategicSimulator() {
           </button>
         </div>
 
-        {/* Server Power-saving / Operational Notice */}
-        {forecastNotice && (
-          <div className="bg-[#B59269]/10 border border-[#B59269]/30 rounded-2xl p-4 text-xs font-semibold text-[#1B382E] flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={16} className="text-[#B59269] shrink-0" />
-              <span>{forecastNotice}</span>
-            </div>
-            <span className="text-[10px] text-[#B59269] bg-[#B59269]/15 px-2 py-0.5 rounded font-mono font-bold">
-              절전 모드 대기
-            </span>
-          </div>
-        )}
-
-        {/* Server Forecast Summary Bar */}
-        {serverForecastData && (
-          <div className="bg-[#284F42] text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-[#1B382E]">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-[#B59269]" />
-              <span className="text-xs font-bold text-white">전사 12개월 매출 예측 시뮬레이터</span>
-              {isForecastComputing && <span className="text-[11px] text-[#E8F2EE]/70 font-semibold animate-pulse">연산 중...</span>}
-            </div>
-            <div className="flex flex-wrap items-center gap-5 text-xs">
-              {serverForecastData.annualTotal !== undefined && (
-                <div>
-                  <span className="text-[#E8F2EE]/70">연간 총예측: </span>
-                  <b className="font-mono text-[#5FB878] font-bold">{serverForecastData.annualTotal.toLocaleString()}원</b>
-                </div>
-              )}
-              {serverForecastData.annualMaxCapacity !== undefined && (
-                <div>
-                  <span className="text-[#E8F2EE]/70">물리 최대 Capa: </span>
-                  <b className="font-mono text-white">{serverForecastData.annualMaxCapacity.toLocaleString()}원</b>
-                </div>
-              )}
-              {serverForecastData.utilizationRate !== undefined && (
-                <div>
-                  <span className="text-[#E8F2EE]/70">가동률: </span>
-                  <b className="font-mono text-[#E8F2EE]">{serverForecastData.utilizationRate}%</b>
-                </div>
-              )}
-              {serverForecastData.goalAchievementPct !== undefined && (
-                <div>
-                  <span className="text-[#E8F2EE]/70">목표 달성률: </span>
-                  <b className="font-mono text-[#B59269] font-black">{serverForecastData.goalAchievementPct}%</b>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
       {activeTab === 'PACKAGE_GEN' ? (
         <PackageGeneratorSimulator />
       ) : activeTab === 'BUSINESS_PLAN' ? (
@@ -1842,6 +1792,56 @@ export default function StrategicSimulator() {
         </div>
       ) : (
         <>
+          {/* Server Power-saving / Operational Notice (TARGET_SIM 전용) */}
+          {forecastNotice && (
+            <div className="bg-[#B59269]/10 border border-[#B59269]/30 rounded-2xl p-4 text-xs font-semibold text-[#1B382E] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle size={16} className="text-[#B59269] shrink-0" />
+                <span>{forecastNotice}</span>
+              </div>
+              <span className="text-[10px] text-[#B59269] bg-[#B59269]/15 px-2 py-0.5 rounded font-mono font-bold">
+                절전 모드 대기
+              </span>
+            </div>
+          )}
+
+          {/* Server Forecast Summary Bar (전사 기준 - 골프 포함 시에만 노출하여 탭/필터 간 수치 불일치 방지) */}
+          {input.includeGolf && serverForecastData && (
+            <div className="bg-[#284F42] text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm border border-[#1B382E]">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-[#B59269]" />
+                <span className="text-xs font-bold text-white">전사 12개월 매출 예측 시뮬레이터</span>
+                {isForecastComputing && <span className="text-[11px] text-[#E8F2EE]/70 font-semibold animate-pulse">연산 중...</span>}
+              </div>
+              <div className="flex flex-wrap items-center gap-5 text-xs">
+                {serverForecastData.annualTotal !== undefined && (
+                  <div>
+                    <span className="text-[#E8F2EE]/70">연간 총예측: </span>
+                    <b className="font-mono text-[#5FB878] font-bold">{serverForecastData.annualTotal.toLocaleString()}원</b>
+                  </div>
+                )}
+                {serverForecastData.annualMaxCapacity !== undefined && (
+                  <div>
+                    <span className="text-[#E8F2EE]/70">물리 최대 Capa: </span>
+                    <b className="font-mono text-white">{serverForecastData.annualMaxCapacity.toLocaleString()}원</b>
+                  </div>
+                )}
+                {serverForecastData.utilizationRate !== undefined && (
+                  <div>
+                    <span className="text-[#E8F2EE]/70">가동률: </span>
+                    <b className="font-mono text-[#E8F2EE]">{serverForecastData.utilizationRate}%</b>
+                  </div>
+                )}
+                {serverForecastData.goalAchievementPct !== undefined && (
+                  <div>
+                    <span className="text-[#E8F2EE]/70">목표 달성률: </span>
+                    <b className="font-mono text-[#B59269] font-black">{serverForecastData.goalAchievementPct}%</b>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* 2. 🎛️ Master Target Console */}
           <div className="bg-[#284F42] p-8 rounded-[32px] text-white shadow-xl relative overflow-hidden space-y-6 border border-[#1B382E]">
         

@@ -464,7 +464,7 @@ export default function RevenueVarianceRca() {
                     {row?.visitorDiff !== null && row?.visitorDiff !== undefined && (
                       <span>
                         {' '}
-                        · 방문객{' '}
+                        · {segCode === 'LEISURE' ? '시설 이용(티켓)' : '방문객'}{' '}
                         <strong className={Number(row?.visitorDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
                           {fmtSignedInt(row?.visitorDiff, '명')}
                         </strong>

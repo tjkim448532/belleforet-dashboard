@@ -80,7 +80,8 @@ export default function RevenueVarianceRca() {
     setOpenSegmentAccordion((prev) => ({ ...prev, [code]: !prev[code] }));
   };
 
-  const fetchAiBriefing = async (queryKey: string) => {
+  const handleStartAiBriefing = async () => {
+    setOpenAiBriefing(true);
     setAiLoading(true);
     try {
       const res = await secureFetcher(
@@ -89,7 +90,7 @@ export default function RevenueVarianceRca() {
 
       if (res && res.success) {
         setRcaData(res.data || res);
-        setAiFetchedKey(queryKey);
+        setAiFetchedKey(currentQueryKey);
       }
     } finally {
       setAiLoading(false);
@@ -110,19 +111,6 @@ export default function RevenueVarianceRca() {
       }
     } finally {
       setLoading(false);
-    }
-
-    if (openAiBriefing) {
-      fetchAiBriefing(currentQueryKey);
-    }
-  };
-
-  const handleToggleAiBriefing = async () => {
-    const nextOpen = !openAiBriefing;
-    setOpenAiBriefing(nextOpen);
-
-    if (nextOpen && aiFetchedKey !== currentQueryKey) {
-      await fetchAiBriefing(currentQueryKey);
     }
   };
 
@@ -333,23 +321,61 @@ export default function RevenueVarianceRca() {
           </div>
         </div>
 
-        {/* [버튼 클릭형] ✨ AI 핵심 원인 4문장 브리핑 패널 */}
+        {/* [버튼 클릭형] AI 핵심 원인 4문장 브리핑 패널 */}
         <div className="border-t border-slate-100 pt-3">
-          <button
-            type="button"
-            onClick={handleToggleAiBriefing}
-            className="w-full flex items-center justify-between text-xs font-bold text-[#1B382E] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-3.5 py-2.5 transition-colors cursor-pointer"
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <Sparkles size={14} className="text-[#1B382E]" />
-              <span>✨ AI로 매출 증감 원인 4문장 요약 {openAiBriefing ? '접기' : '보기'}</span>
-              {aiLoading && <span className="text-[11px] font-normal text-slate-500 ml-1">(AI 최신 분석 갱신 중...)</span>}
-            </span>
-            {openAiBriefing ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#1B382E]">
+              <Sparkles size={15} className="text-[#1B382E]" />
+              <span>AI 매출 증감 원인 4문장 요약</span>
+              {aiFetchedKey === currentQueryKey && !aiLoading && (
+                <span className="text-[11px] font-bold text-emerald-700 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                  분석 완료
+                </span>
+              )}
+            </div>
 
-          {openAiBriefing && aiBriefing && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleStartAiBriefing}
+                disabled={aiLoading}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#1B382E] hover:bg-[#142a22] text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-70"
+              >
+                {aiLoading ? (
+                  <>
+                    <RefreshCw size={13} className="animate-spin" />
+                    <span>AI 분석 진행 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={13} />
+                    <span>{aiFetchedKey === currentQueryKey ? 'AI 다시 분석' : 'AI 분석 시작'}</span>
+                  </>
+                )}
+              </button>
+
+              {aiBriefing && (
+                <button
+                  type="button"
+                  onClick={() => setOpenAiBriefing((prev) => !prev)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:text-[#1B382E] cursor-pointer"
+                >
+                  <span>{openAiBriefing ? '접기' : '내용 보기'}</span>
+                  {openAiBriefing ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {openAiBriefing && (
             <div className="mt-2.5 rounded-lg bg-slate-50 border border-slate-200 p-4 space-y-3 text-xs">
+              {aiLoading && (
+                <div className="flex items-center gap-2 rounded-md bg-[#1B382E] text-white px-3.5 py-2.5 font-bold">
+                  <RefreshCw size={14} className="animate-spin shrink-0" />
+                  <span>AI가 현재 조회 기간의 매출 증감 원인을 4문장으로 분석하고 있습니다...</span>
+                </div>
+              )}
+
               {aiBriefing?.oneLineTakeaway && (
                 <div className="rounded-md bg-white border border-slate-200 px-3 py-2 font-bold text-[#1B382E] leading-relaxed">
                   핵심 요약: {fmtText(aiBriefing.oneLineTakeaway)}

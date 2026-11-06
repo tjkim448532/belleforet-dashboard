@@ -1561,7 +1561,7 @@ export default function Home() {
                             • 1인당 전체 평균 그린피: {formatRevenue(displayData.golfSummary?.avgGreenFee || 0)}원
                           </span>
                           <span className="text-[#6C7A73] mt-0.5 tabular-nums">
-                            = {formatCurrency((displayData.golfSummary?.avgGreenFee || 0) * (displayData.golfSummary?.visitedPlayers || 0))}원 (그린피 총매출) ÷ {formatCurrency(displayData.golfSummary?.visitedPlayers || 0)}명 (실제 내장객 수)
+                            = 그린피 순매출 합계 ÷ {formatCurrency(displayData.golfSummary?.visitedPlayers || 0)}명 (실제 내장객 수)
                           </span>
                         </li>
                         <li className="text-[#6C7A73] pt-1">

@@ -432,7 +432,7 @@ export default function RoomGuestAnalysis() {
               </div>
               <p className="text-[11px] text-[#5A6B63] leading-relaxed break-keep">
                 나들이 고객(워크인) 제외 · 실제 투숙 판매 객실 수 × 평형별 기준정원<br />
-                <span className="text-[#8F9E96] font-mono text-[10px]">(16평 2.5명 · 35평 4.5명 · 51평 5.5명 · R51/단독/펫51 6.0명)</span>
+                <span className="text-[#8F9E96] font-mono text-[10px]">(백엔드 마트 평형별 공식 투숙객 환산 기준 적용)</span>
               </p>
             </div>
           </div>

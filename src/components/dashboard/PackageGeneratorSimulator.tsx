@@ -75,104 +75,43 @@ export interface LiveMonthlySummary {
   isBenchmarkLy: boolean;
 }
 
-// 객실 타입 마스터
+// 객실 타입 마스터 (단가 및 원가는 백엔드 /api/v6/simulator/package-generator 응답에서 바인딩)
 const ROOM_TYPES = [
-  { id: 'ROOM_16', name: '16평형 콘도 (2인 기준)', baseNormalPrice: 150000, defaultCapacity: 2, desc: '커플 및 2인 여행객 최적화 기본 객실' },
-  { id: 'ROOM_35', name: '35평형 콘도 (4인 기준)', baseNormalPrice: 220000, defaultCapacity: 4, desc: '가족 및 소모임 최적화 중형 객실' },
-  { id: 'ROOM_51', name: '51평형 커넥팅룸 (4~6인)', baseNormalPrice: 320000, defaultCapacity: 6, desc: '대가족 및 단체 특화 복합 프리미엄 객실' }
+  { id: 'ROOM_16', name: '16평형 콘도 (2인 기준)', baseNormalPrice: 0, defaultCapacity: 2, desc: '커플 및 2인 여행객 최적화 기본 객실' },
+  { id: 'ROOM_35', name: '35평형 콘도 (4인 기준)', baseNormalPrice: 0, defaultCapacity: 4, desc: '가족 및 소모임 최적화 중형 객실' },
+  { id: 'ROOM_51', name: '51평형 커넥팅룸 (4~6인)', baseNormalPrice: 0, defaultCapacity: 6, desc: '대가족 및 단체 특화 복합 프리미엄 객실' }
 ];
 
-// 🌟 [콘도 객실 실측 원가 분석 마스터 SSOT]
-// 출처: 경영지원팀 콘도 객실 원가 분석표 (구글 스프레드시트 1AcqnpQP0giNR_lLLDkebORHXuvsWj68q)
-// 노벨 경영학적 한계 변동비(Marginal Cost) 원칙: 손님이 1박 투숙할 때마다 현금이 1:1로 유출되는 실질 변동비만 반영
 export interface RoomCostDetail {
-  cleaningCost: number;       // 청소비 (외주 용역 단가)
-  linenLaunderingCost: number;// 린넨류 세탁비 (시트, 베개피, 타올, 이불커버)
-  amenityCost: number;        // 어메니티 (4종 + 비누 2EA 1세트)
-  consumablesCost: number;    // 소모품비 (화장지, 각티슈, 주방세제, 수세미, 생수, 비닐)
-  utilityCost: number;        // 수도광열비 (LPG 난방/온수 45% 가동률 실측 + 욕조 수도요금)
-  totalCostNet: number;       // 총 실질 변동원가 (VAT 별도)
-  totalCostGross: number;     // 총 실질 변동원가 (VAT 10% 포함)
+  cleaningCost: number;
+  linenLaunderingCost: number;
+  amenityCost: number;
+  consumablesCost: number;
+  utilityCost: number;
+  totalCostNet: number;
+  totalCostGross: number;
   linenDetail: { item: string; unitPrice: number; qty: number; amount: number }[];
   consumableDetail: { item: string; amount: number }[];
   utilityDetail: { item: string; amount: number; note: string }[];
 }
 
+const EMPTY_ROOM_COST: RoomCostDetail = {
+  cleaningCost: 0,
+  linenLaunderingCost: 0,
+  amenityCost: 0,
+  consumablesCost: 0,
+  utilityCost: 0,
+  totalCostNet: 0,
+  totalCostGross: 0,
+  linenDetail: [],
+  consumableDetail: [],
+  utilityDetail: []
+};
+
 export const ROOM_COST_MASTER: Record<string, RoomCostDetail> = {
-  ROOM_16: {
-    cleaningCost: 12325,
-    linenLaunderingCost: 3670,
-    amenityCost: 1518,
-    consumablesCost: 3354,
-    utilityCost: 7327, // LPG 2,827원 + 수도 4,500원
-    totalCostNet: 28194,
-    totalCostGross: 31013,
-    linenDetail: [
-      { item: '시트', unitPrice: 450, qty: 2, amount: 900 },
-      { item: '베개피', unitPrice: 130, qty: 3, amount: 390 },
-      { item: '타올', unitPrice: 120, qty: 4, amount: 480 },
-      { item: '침대이불커버', unitPrice: 950, qty: 2, amount: 1900 }
-    ],
-    consumableDetail: [
-      { item: '롤휴지 (2개)', amount: 787 },
-      { item: '각티슈 (1개)', amount: 1500 },
-      { item: '생수 (2병)', amount: 1000 },
-      { item: '위생 비닐봉투 (거실 48원+화장실 19원)', amount: 67 }
-    ],
-    utilityDetail: [
-      { item: 'LPG 가스 (난방/온수)', amount: 2827, note: '1실/일 실측 가동률 45% 기준' },
-      { item: '상수도 요금', amount: 4500, note: '욕조 1.344㎥ 기준' }
-    ]
-  },
-  ROOM_35: {
-    cleaningCost: 24750,
-    linenLaunderingCost: 6760,
-    amenityCost: 1518,
-    consumablesCost: 6940,
-    utilityCost: 10154, // LPG 5,654원 + 수도 4,500원
-    totalCostNet: 50122,
-    totalCostGross: 55134,
-    linenDetail: [
-      { item: '시트', unitPrice: 450, qty: 3, amount: 1350 },
-      { item: '베개피', unitPrice: 130, qty: 5, amount: 650 },
-      { item: '타올', unitPrice: 120, qty: 8, amount: 960 },
-      { item: '침대이불커버', unitPrice: 950, qty: 2, amount: 1900 },
-      { item: '한실이불커버', unitPrice: 950, qty: 1, amount: 950 },
-      { item: '한실요커버', unitPrice: 950, qty: 1, amount: 950 }
-    ],
-    consumableDetail: [
-      { item: '롤휴지 (2개)', amount: 787 },
-      { item: '각티슈 (2개)', amount: 3000 },
-      { item: '주방용품 (퐁퐁/수세미/행주)', amount: 1039 },
-      { item: '생수 (4병)', amount: 2000 },
-      { item: '위생 비닐봉투', amount: 114 }
-    ],
-    utilityDetail: [
-      { item: 'LPG 가스 (난방/온수)', amount: 5654, note: '1실/일 실측 월평균 10,303,642원 환산' },
-      { item: '상수도 요금', amount: 4500, note: '욕조 1.344㎥ 기준' }
-    ]
-  },
-  ROOM_51: {
-    cleaningCost: 37075, // 12,325 + 24,750
-    linenLaunderingCost: 10430, // 3,670 + 6,760
-    amenityCost: 3036, // 1,518 * 2
-    consumablesCost: 10294, // 3,354 + 6,940
-    utilityCost: 17481, // 7,327 + 10,154
-    totalCostNet: 78316,
-    totalCostGross: 86147,
-    linenDetail: [
-      { item: '16평 린넨 전체 세탁', unitPrice: 3670, qty: 1, amount: 3670 },
-      { item: '35평 린넨 전체 세탁', unitPrice: 6760, qty: 1, amount: 6760 }
-    ],
-    consumableDetail: [
-      { item: '16평 소모품 일체', amount: 3354 },
-      { item: '35평 소모품 일체', amount: 6940 }
-    ],
-    utilityDetail: [
-      { item: '16평 LPG 및 수도', amount: 7327, note: '16평 전용 광열비' },
-      { item: '35평 LPG 및 수도', amount: 10154, note: '35평 전용 광열비' }
-    ]
-  }
+  ROOM_16: EMPTY_ROOM_COST,
+  ROOM_35: EMPTY_ROOM_COST,
+  ROOM_51: EMPTY_ROOM_COST
 };
 
 // 사용자가 쉽게 클릭하여 품목명을 자동 입력할 수 있는 추천 명칭 태그
@@ -571,9 +510,24 @@ export default function PackageGeneratorSimulator() {
   // ==========================================
   const reverseCalculations = useMemo(() => {
     const srv = (serverPackageData as any)?.reverseCalculations ?? serverPackageData ?? {};
-    const currentRoomCost = ROOM_COST_MASTER[selectedRoomTypeId] || ROOM_COST_MASTER['ROOM_16'];
-    const roomVariableCostNet = Number(srv.roomVariableCostNet ?? currentRoomCost.totalCostNet);
-    const roomVariableCostGross = Number(srv.roomVariableCostGross ?? currentRoomCost.totalCostGross);
+    const roomComp = Array.isArray((serverPackageData as any)?.components)
+      ? (serverPackageData as any).components.find((c: any) => c.componentType === 'ROOM')
+      : null;
+    const srvCostDetail: Partial<RoomCostDetail> = (srv as any)?.roomCostDetail ?? {};
+    const roomVariableCostNet = Number(srv.roomVariableCostNet ?? srvCostDetail.totalCostNet ?? roomComp?.internalCost ?? 0);
+    const roomVariableCostGross = Number(srv.roomVariableCostGross ?? srvCostDetail.totalCostGross ?? roomComp?.internalCost ?? 0);
+    const currentRoomCost: RoomCostDetail = {
+      cleaningCost: Number(srvCostDetail.cleaningCost ?? 0),
+      linenLaunderingCost: Number(srvCostDetail.linenLaunderingCost ?? 0),
+      amenityCost: Number(srvCostDetail.amenityCost ?? 0),
+      consumablesCost: Number(srvCostDetail.consumablesCost ?? 0),
+      utilityCost: Number(srvCostDetail.utilityCost ?? 0),
+      totalCostNet: roomVariableCostNet,
+      totalCostGross: roomVariableCostGross,
+      linenDetail: Array.isArray(srvCostDetail.linenDetail) ? srvCostDetail.linenDetail : [],
+      consumableDetail: Array.isArray(srvCostDetail.consumableDetail) ? srvCostDetail.consumableDetail : [],
+      utilityDetail: Array.isArray(srvCostDetail.utilityDetail) ? srvCostDetail.utilityDetail : []
+    };
 
     const targetRevpar = activeMetrics.targetRevpar > 0
       ? activeMetrics.targetRevpar
@@ -584,6 +538,9 @@ export default function PackageGeneratorSimulator() {
       : roomDeductionMode === 'REVPAR'
       ? targetRevpar
       : (customRoomDeduction > 0 ? customRoomDeduction : roomVariableCostGross);
+
+    const roomRetailNormal = Number(srv.roomRetailNormal ?? roomComp?.listPrice ?? 0);
+    const totalCustomerRetailValue = Number(srv.totalCustomerRetailValue ?? (serverPackageData as any)?.totalListPrice ?? roomRetailNormal);
 
     return {
       totalPkgGross: Number(srv.totalPkgGross ?? targetPackagePrice ?? 0),
@@ -596,10 +553,10 @@ export default function PackageGeneratorSimulator() {
       leisureBudgetSharePct: Number(srv.leisureBudgetSharePct ?? 0),
       remainingBuffer: Number(srv.remainingBuffer ?? 0),
       isOverBudget: Boolean(srv.isOverBudget),
-      roomRetailNormal: Number(srv.roomRetailNormal ?? selectedRoomType.baseNormalPrice),
-      totalCustomerRetailValue: Number(srv.totalCustomerRetailValue ?? selectedRoomType.baseNormalPrice),
-      customerPerceivedSavings: Number(srv.customerPerceivedSavings ?? 0),
-      customerDiscountRate: Number(srv.customerDiscountRate ?? 0),
+      roomRetailNormal,
+      totalCustomerRetailValue,
+      customerPerceivedSavings: Number(srv.customerPerceivedSavings ?? (serverPackageData as any)?.discountAmount ?? 0),
+      customerDiscountRate: Number(srv.customerDiscountRate ?? (serverPackageData as any)?.targetDiscountPct ?? 0),
       packageNetPrice: Number(srv.packageNetPrice ?? 0),
       currentRoomCost,
       roomVariableCostNet,
@@ -607,9 +564,9 @@ export default function PackageGeneratorSimulator() {
       fnbVariableCostNet: Number(srv.fnbVariableCostNet ?? 0),
       leisureVariableCostNet: Number(srv.leisureVariableCostNet ?? 0),
       amenityVariableCostNet: Number(srv.amenityVariableCostNet ?? 0),
-      totalVariableCost: Number(srv.totalVariableCostNet ?? roomVariableCostNet),
-      totalVariableCostNet: Number(srv.totalVariableCostNet ?? roomVariableCostNet),
-      totalVariableCostGross: Number(srv.totalVariableCostGross ?? roomVariableCostGross),
+      totalVariableCost: Number(srv.totalVariableCostNet ?? (serverPackageData as any)?.totalInternalCost ?? roomVariableCostNet),
+      totalVariableCostNet: Number(srv.totalVariableCostNet ?? (serverPackageData as any)?.totalInternalCost ?? roomVariableCostNet),
+      totalVariableCostGross: Number(srv.totalVariableCostGross ?? (serverPackageData as any)?.totalInternalCost ?? roomVariableCostGross),
       packageContributionMargin: Number(srv.packageContributionMargin ?? srv.estimatedMarginAmount ?? 0),
       contributionMarginRate: Number(srv.contributionMarginRate ?? srv.estimatedMarginPct ?? 0),
       isNegativeMargin: Boolean(srv.isNegativeMargin),
@@ -1397,16 +1354,16 @@ ${itemListText}
               실측 {activeMetrics.targetLabel} TRevPAR({formatCurrency(activeMetrics.targetTrevpar)}원)에서 시작하여 원하는 목표 단가로 자유롭게 변경합니다.
             </p>
 
-            {/* Dynamic Buttons Starting from TRevPAR */}
+            {/* Dynamic Buttons Starting from Backend Metrics */}
             <div className="flex flex-wrap gap-1.5 mb-3">
               {[
                 { label: 'TRevPAR 기준', price: activeMetrics.targetTrevpar },
-                { label: '15만원', price: 150000 },
-                { label: '20만원', price: 200000 },
-                { label: '25만원', price: 250000 },
-                { label: '30만원', price: 300000 },
-                { label: '35만원', price: 350000 }
-              ].map(opt => {
+                { label: 'RevPAR 기준', price: activeMetrics.targetRevpar },
+                { label: 'ADR 기준', price: activeMetrics.targetAdr },
+                ...(serverPackageData?.recommendedSellingPrice
+                  ? [{ label: '서버 추천가', price: serverPackageData.recommendedSellingPrice }]
+                  : [])
+              ].filter(opt => opt.price > 0).map(opt => {
                 const isSelected = targetPackagePrice === opt.price;
 
                 return (
@@ -1448,7 +1405,6 @@ ${itemListText}
             </div>
             <div className="grid grid-cols-3 gap-1.5">
               {ROOM_TYPES.map(r => {
-                const cost = ROOM_COST_MASTER[r.id];
                 const isSelected = selectedRoomTypeId === r.id;
                 return (
                   <button
@@ -1464,7 +1420,9 @@ ${itemListText}
                     <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${
                       isSelected ? 'bg-teal-500/20 text-teal-300' : 'bg-slate-200/70 text-slate-500'
                     }`}>
-                      원가 {formatCurrency(cost?.totalCostNet)}원
+                      {isSelected && reverseCalculations.roomVariableCostNet > 0
+                        ? `원가 ${formatCurrency(reverseCalculations.roomVariableCostNet)}원`
+                        : `${r.defaultCapacity}인 기준`}
                     </span>
                   </button>
                 );
@@ -2017,7 +1975,7 @@ ${itemListText}
                 {formatCurrency(reverseCalculations.amenityVariableCostNet)}원
               </div>
               <div className="text-[10px] text-slate-500 mt-1">
-                식음 {formatCurrency(reverseCalculations.fnbVariableCostNet)}원{'(35%)'} + 레저 {formatCurrency(reverseCalculations.leisureVariableCostNet)}원{'(5%)'}
+                식음 {formatCurrency(reverseCalculations.fnbVariableCostNet)}원 + 레저 {formatCurrency(reverseCalculations.leisureVariableCostNet)}원
               </div>
             </div>
 

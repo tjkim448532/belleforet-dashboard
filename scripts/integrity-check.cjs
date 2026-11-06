@@ -32,12 +32,8 @@ function walk(dir) {
 const files = walk('./src');
 const violations = [];
 
-// 검사 제외 파일 (공식 DB 스냅샷 시드 및 타입 정의)
-const EXCLUDED_FILES = [
-  'monthlySeasonalityData.ts', // DB mat_v6_data_mart_revenue 연도별 실측 계절성 SSOT
-  'defaultCapacitySeeds.ts',   // DB mat_v6_data_mart_revenue 표준 영업장 캐파 마스터 시드
-  'leisurePricingData.ts'      // 벨포레 공식 웹사이트 & PMS 체험 시설 이용요금 카탈로그 SSOT
-];
+// 검사 제외 파일 0건 (100% 전수 검사)
+const EXCLUDED_FILES = [];
 
 files.forEach(filePath => {
   const relPath = path.relative('.', filePath);
@@ -260,6 +256,17 @@ files.forEach(filePath => {
         file: relPath,
         line: lineNum,
         rule: 'Hardcoded Closed-Day Text / Stale Banner / Fake Rank or Inline Arithmetic Forbidden (Rule 16 위반)',
+        code: codeOnly
+      });
+    }
+
+    // 17. 미검증 목표율(annualTargetRatePct/targetAchievementPct), 문자열 금액 폴백(|| '4.5억'), 객실원가 하드코딩(cleaningCost: 12325), 그린피 인라인 곱셈 차단
+    const auditRule17Match = codeOnly.match(/annualTargetRatePct|targetAchievementPct|\|\|\s*['"]4\.5억['"]|cleaningCost:\s*[1-9]\d+|baseNormalPrice:\s*[1-9]\d+|avgGreenFee\s*\|\|\s*0\)\s*\*\s*\(displayData/);
+    if (auditRule17Match) {
+      violations.push({
+        file: relPath,
+        line: lineNum,
+        rule: 'Unverified Target Rate / String Currency Fallback / Hardcoded Room Cost / Inline GreenFee Multiplication Forbidden (Rule 17 위반)',
         code: codeOnly
       });
     }

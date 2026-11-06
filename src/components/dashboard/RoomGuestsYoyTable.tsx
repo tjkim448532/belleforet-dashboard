@@ -217,7 +217,7 @@ export default function RoomGuestsYoyTable() {
           <p className="text-xs text-[#5A6B63] leading-relaxed max-w-3xl">
             {metricMode === 'GUESTS' ? (
               <>
-                나들이 고객(워크인)을 제외하고 실제 콘도에 투숙한 <strong>투숙객(나들이 제외 실투숙객: 16평 2.5명, 35평 4.5명, 51평 5.5명, R51/단독/펫51 6.0명)</strong>과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
+                나들이 고객(워크인)을 제외하고 실제 콘도에 투숙한 <strong>투숙객(나들이 제외 실투숙객 · 백엔드 마트 평형별 공식 기준)</strong>과 객실 소계(ROOM + ROOM OTHER) 매출의 연도별 실적 추이입니다.
               </>
             ) : (
               <>

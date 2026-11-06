@@ -59,69 +59,131 @@ export default function LeisurePricing() {
         if (payload?.lastUpdated) {
           setLastUpdated(`${payload.lastUpdated.replace('T', ' ').substring(0, 16)} (S3 실시간 동기화)`);
         }
-        const rawList = Array.isArray(payload?.facilities) ? payload.facilities : [];
-        const isFullCatalogSchema = rawList.length > 0 && rawList.every((item: any) => item?.mainCategory && Array.isArray(item?.regularPrices));
+        const topFacilities = Array.isArray(res?.facilities)
+          ? res.facilities
+          : Array.isArray(payload?.facilities)
+          ? payload.facilities
+          : [];
+        const isFullCatalogSchema =
+          topFacilities.length > 0 &&
+          topFacilities.every((item: any) => item?.mainCategory && Array.isArray(item?.regularPrices));
 
         if (isFullCatalogSchema) {
-          setFacilities(rawList);
+          setFacilities(topFacilities);
         } else {
-          // Merge S3 live snapshot (specialOffers, golfSnapshot, diningVenues) into official SSOT catalog
-          setFacilities(
-            LEISURE_FACILITIES.map((facility) => {
-              let updated = { ...facility };
+          const built: LeisureFacilityPricing[] = [];
+          const fmtWon = (v: any) =>
+            v !== null && v !== undefined && !isNaN(Number(v))
+              ? `${Number(v).toLocaleString()}원`
+              : '-';
 
-              if (updated.isSpecialOffer && Array.isArray(payload?.specialOffers)) {
-                const matchedOffer = payload.specialOffers.find((so: any) =>
-                  so.id === updated.id.replace('offer-', '') ||
-                  updated.name.includes(so.title) ||
-                  (so.title && so.title.includes(updated.name.replace('[스페셜 오퍼]', '').trim()))
-                );
-                if (matchedOffer) {
-                  updated = {
-                    ...updated,
-                    period: matchedOffer.period || updated.period,
-                    officialUrl: matchedOffer.link || updated.officialUrl,
-                    summary: matchedOffer.desc || updated.summary,
-                  };
+          if (payload?.golfSnapshot?.verified) {
+            const gs = payload.golfSnapshot;
+            built.push({
+              id: 'golf-greenfee',
+              name: gs.facilityName || '블랙스톤 벨포레 CC',
+              mainCategory: 'golf',
+              mainCategoryLabel: '골프',
+              subCategory: '골프 라운딩',
+              summary: '원남호와 두타산 정규 코스 그린피 · 카트 · 캐디 요금 (백엔드 실시간 스냅샷)',
+              representativePrice: `주중 ${gs.greenFeeWeekday || '-'} / 주말 ${gs.greenFeeWeekend || '-'}`,
+              operatingHours: '-',
+              closedDay: '-',
+              contact: '-',
+              discountBadges: [],
+              regularPrices: [
+                { name: '그린피 (주중)', priceWeekday: gs.greenFeeWeekday || '-', priceWeekend: '-' },
+                { name: '그린피 (주말)', priceWeekday: '-', priceWeekend: gs.greenFeeWeekend || '-' },
+                { name: '카트비', priceWeekday: gs.cartFee || '-', priceWeekend: gs.cartFee || '-' },
+                { name: '캐디피', priceWeekday: gs.caddieFee || '-', priceWeekend: gs.caddieFee || '-' }
+              ],
+              discounts: [],
+              requirements: [],
+              notes: gs.lastChecked ? [`수집 시각: ${gs.lastChecked}`] : []
+            });
+          }
+
+          topFacilities.forEach((f: any, idx: number) => {
+            built.push({
+              id: f.facilityCode || `leisure-${idx}`,
+              name: f.facilityName || f.name || '-',
+              mainCategory: 'leisure',
+              mainCategoryLabel: '레져',
+              subCategory: f.categoryCode || '레져',
+              summary: f.notes || '',
+              representativePrice: `정상가 ${fmtWon(f.standardPrice)} / 우대가 ${fmtWon(f.discountPrice)}`,
+              operatingHours: f.operatingHours || '-',
+              closedDay: f.closedDay || '-',
+              contact: f.contact || '-',
+              discountBadges: [],
+              regularPrices: [
+                {
+                  name: '정상가 / 우대가 / 회원가',
+                  priceWeekday: fmtWon(f.standardPrice),
+                  priceWeekend: f.weekendSurcharge ? `주말 할증 +${fmtWon(f.weekendSurcharge)}` : fmtWon(f.standardPrice),
+                  note: `우대가 ${fmtWon(f.discountPrice)} · 회원가 ${fmtWon(f.memberPrice)}`
                 }
-              }
+              ],
+              discounts: [],
+              requirements: [],
+              notes: f.notes ? [f.notes] : []
+            });
+          });
 
-              if (updated.id === 'golf-greenfee' && payload?.golfSnapshot?.verified) {
-                updated = {
-                  ...updated,
-                  regularPrices: (updated.regularPrices || []).map((rp) => {
-                    if (rp.name.includes('주중') && payload.golfSnapshot.greenFeeWeekday) {
-                      return { ...rp, priceWeekday: payload.golfSnapshot.greenFeeWeekday };
-                    }
-                    if (rp.name.includes('주말') && payload.golfSnapshot.greenFeeWeekend) {
-                      return { ...rp, priceWeekend: payload.golfSnapshot.greenFeeWeekend };
-                    }
-                    if (rp.name.includes('카트') && payload.golfSnapshot.cartFee) {
-                      return { ...rp, priceWeekday: payload.golfSnapshot.cartFee, priceWeekend: payload.golfSnapshot.cartFee };
-                    }
-                    return rp;
-                  }),
-                };
-              }
+          if (Array.isArray(payload?.diningVenues)) {
+            payload.diningVenues.forEach((dv: any, idx: number) => {
+              built.push({
+                id: `dining-${idx}`,
+                name: dv.venueName || dv.normalizedName || '-',
+                mainCategory: 'dining',
+                mainCategoryLabel: '식음',
+                subCategory: '식음업장',
+                summary: dv.operatingHours || '-',
+                representativePrice: '-',
+                operatingHours: dv.operatingHours || '-',
+                closedDay: dv.closedDay || '-',
+                contact: dv.contact || '-',
+                officialUrl: dv.officialUrl,
+                discountBadges: [],
+                regularPrices: [],
+                discounts: [],
+                requirements: [],
+                notes: []
+              });
+            });
+          }
 
-              if (updated.mainCategory === 'dining' && Array.isArray(payload?.diningVenues)) {
-                const matchedDining = payload.diningVenues.find((dv: any) =>
-                  dv.venueName && (updated.name.includes(dv.venueName) || dv.venueName.includes(updated.name))
-                );
-                if (matchedDining) {
-                  updated = {
-                    ...updated,
-                    closedDay: matchedDining.closedDay || updated.closedDay,
-                    operatingHours: matchedDining.operatingHours || updated.operatingHours,
-                    contact: matchedDining.contact || updated.contact,
-                    officialUrl: matchedDining.officialUrl || updated.officialUrl,
-                  };
-                }
-              }
+          if (Array.isArray(payload?.specialOffers)) {
+            payload.specialOffers.forEach((so: any, idx: number) => {
+              const cat: MainCategoryType =
+                so.category === 'golf' || so.category === 'room' || so.category === 'dining'
+                  ? so.category
+                  : 'leisure';
+              const catLabel =
+                cat === 'golf' ? '골프' : cat === 'room' ? '객실' : cat === 'dining' ? '식음' : '레져';
+              built.push({
+                id: `offer-${so.id || idx}`,
+                name: so.title || so.normalizedName || '-',
+                mainCategory: cat,
+                mainCategoryLabel: catLabel,
+                subCategory: so.categoryLabel || '스페셜 오퍼',
+                summary: so.desc || '',
+                representativePrice: so.period || '-',
+                operatingHours: '-',
+                closedDay: '-',
+                officialUrl: so.link,
+                period: so.period,
+                isSpecialOffer: true,
+                discountBadges: Array.isArray(so.tags) ? so.tags : [],
+                regularPrices: [],
+                discounts: [],
+                requirements: [],
+                notes: []
+              });
+            });
+          }
 
-              return updated;
-            })
-          );
+          setFacilities(built);
         }
       } finally {
         if (!isCancelled) setIsSyncing(false);

@@ -529,12 +529,12 @@ export default function LeisureVarianceRca() {
       </div>
 
       {/* =====================================================================
-          2. 시트 4대 핵심 영업장 목표 이용률 대조 (coreSheetVenueTargets)
+          2. 4대 핵심 영업장 매출 · 이용률 현황 (coreSheetVenueTargets)
          ===================================================================== */}
       {coreSheetTargets.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-[#1B382E]">4대 핵심 영업장 목표 이용률 대조</h2>
+            <h2 className="text-sm font-black text-[#1B382E]">4대 핵심 영업장 매출 · 이용률 현황</h2>
             <span className="text-[11px] text-slate-500">
               모수 기준: 숙박(골프제외)+나들이 {fmtInt(formula?.tyTargetPoolVisitors)}명
             </span>
@@ -566,14 +566,6 @@ export default function LeisureVarianceRca() {
                     <span className="text-slate-500">실제 이용률</span>
                     <strong className={rateNeg ? 'text-rose-600' : 'text-emerald-700'}>
                       {fmtPct(v?.lyUsageRatePct, false)} ➔ {fmtPct(v?.tyUsageRatePct, false)} ({fmtPctp(v?.usageRateDiffPctp)})
-                    </strong>
-                  </div>
-                  <div className="flex items-baseline justify-between bg-slate-50 rounded px-2 py-1 border border-slate-200">
-                    <span className="text-slate-600 font-semibold">
-                      연간 목표 {fmtPct(v?.annualTargetRatePct, false)}
-                    </span>
-                    <strong className="text-[#1B382E]">
-                      달성률 {fmtPct(v?.targetAchievementPct, false)}
                     </strong>
                   </div>
                 </div>

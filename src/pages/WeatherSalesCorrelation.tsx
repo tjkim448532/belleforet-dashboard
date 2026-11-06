@@ -1623,7 +1623,7 @@ export default function WeatherSalesCorrelation() {
               <Umbrella className="text-[#B59269]" /> 우천 예보 시 실측 스트레스 테스트(Stress Test) 기반 변동비 방어 체계
             </h3>
             <p className="text-xs text-white/80 mb-6 leading-relaxed">
-              가상의 수식 대신 과거 2개년(2024~2025) 중 실제로 비가 온 주말 실측치(골프 -85%, 야외레저 -92%, 실내F&B +25%)를 기준으로 삼아, 우천 예보 시 인건비와 식자재 낭비를 선제적으로 차단하는 <strong>변동비(Variable Cost) 방어 프로토콜</strong>입니다.
+              가상의 수식 대신 과거 2개년(2024~2025) 중 실제로 비가 온 주말 실측치를 기준으로 삼아, 우천 예보 시 인건비와 식자재 낭비를 선제적으로 차단하는 <strong>변동비(Variable Cost) 방어 프로토콜</strong>입니다.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2">
               <div className="bg-[#1B382E]/60 rounded-2xl p-5 border border-white/10 flex flex-col justify-between backdrop-blur-xs">
@@ -1631,7 +1631,7 @@ export default function WeatherSalesCorrelation() {
                   <div className="text-[#B59269] font-bold text-xs uppercase tracking-wider mb-1">D-2 (목 18:00) 락다운 ①</div>
                   <div className="text-white font-bold text-sm mb-2">야외 파트타임(알바) 출근 동결</div>
                   <p className="text-xs text-white/70 leading-relaxed break-keep">
-                    기상청 예보 기준 주말 강수확률 70% 이상 시, 골프 코스지원 및 루지·썰매장 탑승보조 등 단기 인력 스케줄을 사전 취소하여 <strong>불필요한 고정 인건비 유출을 원천 방어</strong>합니다.
+                    기상청 우천 예보 기준 도달 시, 골프 코스지원 및 루지·썰매장 탑승보조 등 단기 인력 스케줄을 사전 취소하여 <strong>불필요한 고정 인건비 유출을 원천 방어</strong>합니다.
                   </p>
                 </div>
                 <div className="mt-4 pt-2 border-t border-white/10 text-[11px] text-[#B59269] font-bold">
@@ -1644,7 +1644,7 @@ export default function WeatherSalesCorrelation() {
                   <div className="text-[#EAC5BD] font-bold text-xs uppercase tracking-wider mb-1">D-2 (목 18:00) 락다운 ②</div>
                   <div className="text-white font-bold text-sm mb-2">신선 식자재 발주 긴급 삭감</div>
                   <p className="text-xs text-white/70 leading-relaxed break-keep">
-                    야외 바베큐용 육류 및 신선 채소 발주량을 <strong>평소 주말 대비 즉시 50% 삭감</strong>하여, 우천 시 발생하는 대량 폐기 손실을 차단하고 냉동 보관형 품목으로 식단을 긴급 전환합니다.
+                    야외 바베큐용 육류 및 신선 채소 발주량을 <strong>평소 주말 대비 선제 감축</strong>하여, 우천 시 발생하는 대량 폐기 손실을 차단하고 냉동 보관형 품목으로 식단을 긴급 전환합니다.
                   </p>
                 </div>
                 <div className="mt-4 pt-2 border-t border-white/10 text-[11px] text-[#EAC5BD] font-bold">
@@ -1657,11 +1657,11 @@ export default function WeatherSalesCorrelation() {
                   <div className="text-[#5FB878] font-bold text-xs uppercase tracking-wider mb-1">D-1 (금 14:00) 실내 전환</div>
                   <div className="text-white font-bold text-sm mb-2">실내 식음 & 대체 바우처 집중</div>
                   <p className="text-xs text-white/70 leading-relaxed break-keep">
-                    야외 레저 취소 고객 대상 <strong>미디어아트센터 및 실내 F&B(베이커리/룸 딜리버리) 20% 우대 바우처</strong>를 카카오 알림톡으로 전송하여 리조트 밖 이탈 고객의 발길을 실내로 락인(Lock-in)합니다.
+                    야외 레저 취소 고객 대상 <strong>미디어아트센터 및 실내 F&B(베이커리/룸 딜리버리) 우대 바우처</strong>를 카카오 알림톡으로 전송하여 리조트 밖 이탈 고객의 발길을 실내로 락인(Lock-in)합니다.
                   </p>
                 </div>
                 <div className="mt-4 pt-2 border-t border-white/10 text-[11px] text-[#5FB878] font-bold">
-                  전환 효과: 실내 매출 +20~30% 회수
+                  전환 목표: 야외 이탈 수요의 실내 매출 회수
                 </div>
               </div>
 

@@ -1505,7 +1505,7 @@ export default function RoomDynamicPricing() {
                       </span>
                     </div>
                     <p className="text-[11px] text-[#5A6B63] mb-3 leading-relaxed">
-                      우리 리조트의 현재 남은 방과 예약 속도 중심 + 주변 리조트 만실 시 보너스(+1.5%p ~ +3.5%p) 가산
+                      우리 리조트의 현재 남은 방과 예약 속도 중심 + 주변 리조트 만실 시 보너스 가산
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1635,7 +1635,7 @@ export default function RoomDynamicPricing() {
                     핵심 2 · 2개년 예약 패턴 분석
                   </div>
                   <div className="text-sm font-extrabold text-[#1B382E]">
-                    추석 이동 노이즈 제거 & 62,233건 취소 위험 차감
+                    추석 이동 노이즈 제거 & 취소 위험 차감
                   </div>
                   <p className="text-xs text-[#5A6B63] leading-relaxed">
                     2개년 동요일 점유율 및 리드타임 D-k 예약 속도를 결합하여, 11월 주말의 구조적 만실 패턴을 포착하고 D-25 이전에도 선제적으로 요금을 인상합니다.
@@ -1960,7 +1960,7 @@ export default function RoomDynamicPricing() {
                               <strong className="text-[#1B382E] font-financial">{formatWon(bm.adr2026RecentRetail)}</strong>
                             </div>
                             <div className="bg-[#E8F2EE]/70 px-2 py-1 rounded-lg">
-                              <span className="text-[10px] text-[#1E523F] font-bold block" title="평일(월~목 65% 비중)이 포함된 향후 30일 달력 평균가">
+                              <span className="text-[10px] text-[#1E523F] font-bold block" title="평일(월~목)이 포함된 향후 30일 달력 평균가">
                                 30일 추천 평균
                               </span>
                               <strong className="text-[#1E523F] font-black font-financial">{formatWon(bm.next30dAvgRecommendedAdr)}</strong>
@@ -1979,7 +1979,7 @@ export default function RoomDynamicPricing() {
                         💡 30일 추천 평균이 2026 실측보다 항상 작아 보이는 이유 (달력 요일 구성비 차이)
                       </strong>
                       <p>
-                        <strong>2026 실측(기준점)</strong>은 예약이 집중된 주말·성수기 고가 구간에 실제 판매된 방들의 가중평균인 반면, <strong>30일 추천 평균</strong>은 한 달 30일 중 약 65%를 차지하는 <strong>평일(월~목 18~20일) 정가</strong>가 모두 포함된 30일 달력 전체의 단순 평균값입니다. 즉, <strong>가격을 깎아서 추천하는 것이 아니며</strong> 주말에는 여전히 실측보다 높은 추천 요금을 수호합니다.
+                        <strong>2026 실측(기준점)</strong>은 예약이 집중된 주말·성수기 고가 구간에 실제 판매된 방들의 가중평균인 반면, <strong>30일 추천 평균</strong>은 한 달 중 다수를 차지하는 <strong>평일(월~목) 정가</strong>가 모두 포함된 달력 전체의 단순 평균값입니다. 즉, <strong>가격을 깎아서 추천하는 것이 아니며</strong> 주말에는 여전히 실측보다 높은 추천 요금을 수호합니다.
                       </p>
                     </div>
                   </div>
@@ -2279,8 +2279,8 @@ export default function RoomDynamicPricing() {
                           <tr className="bg-[#F4F3EE] text-[#5A6B63] font-extrabold border-b border-[#D0C6BB]/80">
                             <th className="py-2.5 px-4">평형 구분</th>
                             <th className="py-2.5 px-4 text-right">오늘 추천 판매가</th>
-                            <th className="py-2.5 px-4 text-right">홈페이지·앱 직판 (2.5%)</th>
-                            <th className="py-2.5 px-4 text-right">야놀자 등 온라인 (12% 방어)</th>
+                            <th className="py-2.5 px-4 text-right">홈페이지·앱 직판</th>
+                            <th className="py-2.5 px-4 text-right">야놀자 등 온라인</th>
                             <th className="py-2.5 px-4 text-right">기업 휴양소 계약가</th>
                             <th className="py-2.5 px-4 text-right">단체 행사 기본가</th>
                             <th className="py-2.5 px-4 text-right bg-[#FAF6ED] text-[#8C6D3B]">★ 단체 네고 마지노선 (이 밑은 거절)</th>
@@ -2913,8 +2913,8 @@ export default function RoomDynamicPricing() {
                               <span>윗줄 (1~4번) ➔ 100% 벨포레 자체 객실 지표</span>
                             </div>
                             <ul className="space-y-1.5 text-[#5A6B63] text-xs">
-                              <li>• <strong>① 30일간 현재 예약 완료 (예약률)</strong>: <strong>벨포레</strong> 향후 30일 총 가용 5,250실(175실×30일) 중 이미 확정된 2,841실의 실예약률입니다.</li>
-                              <li>• <strong>② 2025 vs 2026 실제 판매 요금 비교</strong>: <strong>벨포레</strong>의 작년 실제 객실단가(ADR) 대비 올해 판매단가 인상 실적(+24.5%)입니다.</li>
+                              <li>• <strong>① 30일간 현재 예약 완료 (예약률)</strong>: <strong>벨포레</strong> 향후 총 가용 {formatNum(currentOtb?.totalCapacityKeys)}실 중 이미 확정된 {formatNum(currentOtb?.totalOccupiedKeys)}실의 실예약률입니다.</li>
+                              <li>• <strong>② 2025 vs 2026 실제 판매 요금 비교</strong>: <strong>벨포레</strong>의 작년 실제 객실단가(ADR) 대비 올해 판매단가 인상 실적({formatSignedPct(recent2026?.yoyRetailAdrGrowthPct)})입니다.</li>
                               <li>• <strong>③ 향후 30일 추천 평균 요금 (1박)</strong>: 시장 수요와 예약 속도를 고려해 알고리즘이 제안하는 <strong>벨포레 1박 평균 추천 판매가</strong>입니다.</li>
                               <li>• <strong>④ 30일 추천 요금 적용 시 추가 수익</strong>: 추천 가격을 적용했을 때 <strong>벨포레가 얻게 되는 추가 예상 매출</strong>입니다.</li>
                             </ul>
@@ -2928,7 +2928,7 @@ export default function RoomDynamicPricing() {
                             </div>
                             <ul className="space-y-1.5 text-[#5A6B63] text-xs">
                               <li>• <strong>주변 만실 집중일</strong>: 충청권 4대 경쟁사(포레스트·스플라스 리솜, 소노문 단양, 천안 소노벨)의 객실이 <strong>완전 품절(만실)</strong>된 날짜 수입니다.</li>
-                              <li>• <strong>26.6실/일 (신규 유입 319실)</strong>: 경쟁사 품절 시 숙소를 찾지 못한 고객이 <strong>벨포레로 유입되는 예약 속도</strong>입니다.</li>
+                              <li>• <strong>일평균 신규 예약 유입 속도</strong>: 경쟁사 품절 시 숙소를 찾지 못한 고객이 <strong>벨포레로 유입되는 예약 속도({spillover?.highCompressionGroup?.avgRecent7dPickupRoomsPerDay != null ? `${spillover.highCompressionGroup.avgRecent7dPickupRoomsPerDay}실/일` : '-'})</strong>입니다.</li>
                               <li>• <strong>현재 확정 예약 매출</strong>: 이미 벨포레에 입금·확정되어 변동 없는 <strong>벨포레의 확정 객실 매출</strong>입니다.</li>
                               <li>• <strong>앞으로 팔 방의 예상 추가 이익</strong>: 주변 경쟁사 품절일에 가격을 방어하며 판매할 때 <strong>벨포레가 추가 확보 가능한 순이익</strong>입니다.</li>
                             </ul>
@@ -3076,7 +3076,7 @@ export default function RoomDynamicPricing() {
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
                             <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60">
-                              <span className="text-[#5A6B63] block font-medium">홈페이지·앱 직판 (2.5%)</span>
+                              <span className="text-[#5A6B63] block font-medium">홈페이지·앱 직판</span>
                               <strong className="text-base font-black text-[#1B382E] font-financial block mt-0.5">
                                 {formatNum(summaryOtbChannel.fitDirectRooms)}실
                               </strong>
@@ -3186,7 +3186,7 @@ export default function RoomDynamicPricing() {
                     </span>
                   </div>
                   <p className="text-xs text-[#5A6B63] mt-1 font-medium">
-                    과거의 싼 요금으로 정가가 깎이는 현상을 막고 2026년 정가를 완벽히 수호하며, 지난 2개년간 62,233건의 예약 패턴을 분석해 최적 요금을 도출하는 원리입니다.
+                    과거의 싼 요금으로 정가가 깎이는 현상을 막고 2026년 정가를 완벽히 수호하며, 지난 2개년간의 예약 패턴을 분석해 최적 요금을 도출하는 원리입니다.
                   </p>
                 </div>
 
@@ -3218,7 +3218,7 @@ export default function RoomDynamicPricing() {
                           <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#E8F2EE] text-[#1E523F]">안정적 방어</span>
                         </div>
                         <p className="text-[#5A6B63] leading-relaxed">
-                          벨포레 자체 남은 객실(총 175실)과 체크인까지 남은 날짜(D-k)를 분석해 요일별 기본 정가를 조정하며, 주변 리조트가 만실일 때 보너스(+1.5%p ~ +3.5%p)를 반영합니다.
+                          벨포레 자체 남은 객실과 체크인까지 남은 날짜(D-k)를 분석해 요일별 기본 정가를 조정하며, 주변 리조트가 만실일 때 보너스를 반영합니다.
                         </p>
                       </div>
 
@@ -3254,19 +3254,19 @@ export default function RoomDynamicPricing() {
                         <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60 space-y-1">
                           <span className="font-extrabold text-[#1B382E] block">① 주변 리조트 만실 시 요금 인상</span>
                           <p className="text-[#5A6B63] leading-relaxed">
-                            주변 리조트가 만실에 가까울 때 단풍·주말 피크에 최대 +3.0%p ~ +5.0%p 추가 인상하여 너무 일찍 방이 다 팔려 손해보는 일을 방지합니다.
+                            주변 리조트가 만실에 가까울 때 단풍·주말 피크에 추가 인상하여 너무 일찍 방이 다 팔려 손해보는 일을 방지합니다.
                           </p>
                         </div>
                         <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60 space-y-1">
                           <span className="font-extrabold text-[#1B382E] block">② 목·일요일 예약 집중 감지</span>
                           <p className="text-[#5A6B63] leading-relaxed">
-                            주변 경쟁사의 주중 품절률이 높을 때 우리 쪽으로 몰려오는 고객을 선제 포착하여 주중/일요 요금을 +2.0%p 선제 방어합니다.
+                            주변 경쟁사의 주중 품절률이 높을 때 우리 쪽으로 몰려오는 고객을 선제 포착하여 주중/일요 요금을 선제 방어합니다.
                           </p>
                         </div>
                         <div className="bg-[#FAF9F6] p-3 rounded-xl border border-[#D0C6BB]/60 space-y-1">
                           <span className="font-extrabold text-[#1B382E] block">③ 경쟁사 덤핑 세일에 휘말리지 않기</span>
                           <p className="text-[#5A6B63] leading-relaxed">
-                            경쟁사가 평일 요금을 50% 폭락 덤핑하더라도, 벨포레는 출혈경쟁을 피하고 2026년 정가를 지키며 레저 쿠폰 특전으로 고객을 모읍니다.
+                            경쟁사가 평일 요금을 폭락 덤핑하더라도, 벨포레는 출혈경쟁을 피하고 2026년 정가를 지키며 레저 쿠폰 특전으로 고객을 모읍니다.
                           </p>
                         </div>
                       </div>
@@ -3295,7 +3295,7 @@ export default function RoomDynamicPricing() {
                       <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-[#D0C6BB]/60 space-y-1">
                         <span className="font-extrabold text-[#1B382E] block">📊 정가 기준 및 수요 분석 소스</span>
                         <p className="text-[#5A6B63] leading-relaxed">
-                          기본 요금은 <strong>2026년 최근 실제 판매가({formatWon(recent2026?.retailAdr)})를 100% 기준</strong>으로 삼고, 수요 예측은 <strong>2024년·2025년 2개년 62,233건 실측 데이터</strong>를 결합합니다.
+                          기본 요금은 <strong>2026년 최근 실제 판매가({formatWon(recent2026?.retailAdr)})를 100% 기준</strong>으로 삼고, 수요 예측은 <strong>2024년·2025년 2개년 실측 데이터</strong>를 결합합니다.
                         </p>
                       </div>
                     </div>

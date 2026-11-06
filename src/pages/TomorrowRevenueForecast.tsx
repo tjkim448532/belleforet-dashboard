@@ -146,14 +146,14 @@ export default function TomorrowRevenueForecast() {
       case 'HIGH_NEGATIVE':
         return {
           label: '야외 급감',
-          desc: '우천 시 -35%~-90% 급감',
+          desc: '우천 시 급감 민감군',
           color: 'bg-[#FDF0ED] text-[#8B2635] border-[#EAC5BD]',
           dot: 'bg-[#8B2635]'
         };
       case 'VULNERABLE':
         return {
           label: '야외 노출',
-          desc: '우천 시 -10%~-20% 감소',
+          desc: '우천 시 감소 노출군',
           color: 'bg-[#B59269]/15 text-[#B59269] border-[#B59269]/40',
           dot: 'bg-[#B59269]'
         };

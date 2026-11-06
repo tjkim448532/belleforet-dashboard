@@ -1583,10 +1583,8 @@ export default function MonthlyTrevporChart() {
                         <span>가용객실 (Available Rooms)</span>
                       </div>
                       <div className="text-[11px] leading-relaxed">
-                        • <b>산정 방식</b>: 벨포레 물리 고정 인벤토리 <b>1일 175실 × 해당 월 역일수(Days)</b><br/>
-                        • 31일 월: 5,425실 (1, 3, 5, 7, 8, 10, 12월)<br/>
-                        • 30일 월: 5,250실 (4, 6, 9, 11월)<br/>
-                        • 28일 월: 4,900실 (2월) · 진행월: 175실 × 누적일수
+                        • <b>산정 방식</b>: 백엔드 데이터 마트(`availableRooms`)가 산출한 월별 물리 가용객실 모수를 그대로 표출합니다.<br/>
+                        • 진행월은 백엔드 집계 기준 누적 운영일수 모수가 반영됩니다.
                       </div>
                     </div>
 

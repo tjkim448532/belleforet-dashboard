@@ -472,7 +472,7 @@ export default function Members() {
               <span className={`px-2 py-0.5 rounded-full text-[11px] ${
                 activeMainTab === 'corporate' ? 'bg-[#B59269] text-white' : 'bg-white text-[#1B382E]'
               }`}>
-                {formatNum(corpFitSummary.groupsCount)}건 · {corpFitSummary.totalRevenueFormatted || '4.5억'}원
+                {formatNum(corpFitSummary.groupsCount)}건{corpFitSummary.totalRevenueFormatted ? ` · ${corpFitSummary.totalRevenueFormatted}원` : ''}
               </span>
             )}
           </button>
@@ -752,8 +752,8 @@ export default function Members() {
                 <div className="p-3.5 rounded-2xl bg-[#F4F3EE] border border-dashed border-[#D0C6BB] text-xs text-[#5A6B63] flex items-start gap-2.5">
                   <Info size={15} className="text-[#8B2635] shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-[#1B382E]">백엔드 Ticket 82 연동 대기 (`depositRedemptionSummary`):</strong>{' '}
-                    현재 실측 확인된 구좌별 이용률(전체 825구좌 중 창립회원 활성율 <strong className="text-[#8B2635]">86/168구좌, 소진율 6.4%</strong> 등)과 <code className="font-mono text-[#1B382E]">16)분양회원</code>의 계약만기일·보증금을 결합한 만기 구간별 반환 위험군 완제품이 배포되면 즉시 표출됩니다.
+                    <strong className="text-[#1B382E]">분양회원 보증금 반환 리스크 요약 (`depositRedemptionSummary`):</strong>{' '}
+                    구좌별 실사용 소진율과 <code className="font-mono text-[#1B382E]">16)분양회원</code>의 계약만기일·보증금을 결합한 만기 구간별 반환 위험군 데이터를 백엔드 응답에서 수신하여 표출합니다.
                   </div>
                 </div>
               )}
@@ -2043,7 +2043,7 @@ export default function Members() {
                   }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                  정산 완료 ({formatNum(completedCorpCount)}건 / {corpFitSummary?.totalRevenueFormatted || '4.5억'}원)
+                  정산 완료 ({formatNum(completedCorpCount)}건{corpFitSummary?.totalRevenueFormatted ? ` / ${corpFitSummary.totalRevenueFormatted}원` : ''})
                 </button>
                 <button
                   type="button"

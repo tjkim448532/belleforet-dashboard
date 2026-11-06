@@ -46,6 +46,7 @@ import WeatherSalesCorrelation from './pages/WeatherSalesCorrelation';
 import TomorrowRevenueForecast from './pages/TomorrowRevenueForecast';
 import OutsourcedFnbDashboard from './pages/OutsourcedFnbDashboard';
 import RevenueVarianceRca from './pages/RevenueVarianceRca';
+import LeisureVarianceRca from './pages/LeisureVarianceRca';
 import GroupVenuePreferenceSection from './components/dashboard/GroupVenuePreferenceSection';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -115,6 +116,8 @@ export function App() {
                     <Route path="sales/group-master-crm" element={<GroupSales pageSection="GROUP_MASTER_CRM" />} />
                     <Route path="sales/group-venue-preference" element={<GroupSales pageSection="GROUP_VENUE_PREFERENCE" />} />
                     <Route path="leisure" element={<LeisureFacility />} />
+                    <Route path="leisure/variance-rca" element={<LeisureVarianceRca />} />
+                    <Route path="leisure-variance-rca" element={<LeisureVarianceRca />} />
                     <Route path="leisure/organization" element={<LeisureOrganization />} />
                     <Route path="leisure-organization" element={<LeisureOrganization />} />
                     <Route path="leisure/usage-rate" element={<LeisureUsageRate />} />

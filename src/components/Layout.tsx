@@ -21,7 +21,10 @@ export default function Layout() {
     );
   }
 
-  const { logout, isAdmin, hasRole, updateUserPassword, userEmail } = useAuth();
+  const { logout, isAdmin, userRole, userRoles, hasRole, updateUserPassword, userEmail } = useAuth();
+  const isAdminUser = Boolean(
+    isAdmin || userRole === 'admin' || (Array.isArray(userRoles) && userRoles.includes('admin'))
+  );
   const navigate = useNavigate();
   const [isPinned, setIsPinned] = useState<boolean>(() => {
     const saved = localStorage.getItem('belleforet_sidebar_pinned');
@@ -378,6 +381,20 @@ export default function Layout() {
                 >
                   레저 매출 · 인기티켓 & 할인누수
                 </NavLink>
+                {isAdminUser && (
+                  <NavLink
+                    to="/leisure/variance-rca"
+                    className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                      isActive || window.location.pathname === '/leisure-variance-rca'
+                        ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                    onClick={handleNavClick}
+                  >
+                    <Activity size={14} className="shrink-0 text-[#CAAC86]" />
+                    레저본부 증감 원인 분석
+                  </NavLink>
+                )}
                 <NavLink
                   to="/leisure/room-guest-analysis"
                   className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${

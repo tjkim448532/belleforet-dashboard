@@ -53,8 +53,8 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
   trevpar: {
     title: 'TrevPAR (가용객실당 총매출)',
     badge: '리조트 핵심 KPI',
-    definition: '리조트가 보유한 175실 전체 물리적 객실 1실당 창출된 리조트 전사(객실+식음+레저+골프) 통합 매출 효율입니다.',
-    formula: '리조트 전사 총 순매출 ÷ (물리 가용객실수 175실 × 운영일수)',
+    definition: '리조트가 보유한 전체 물리적 가용 객실 1실당 창출된 리조트 전사(객실+식음+레저+골프) 통합 매출 효율입니다.',
+    formula: '리조트 전사 총 순매출 ÷ (물리 가용객실수 × 운영일수)',
     insight: '단순 객실 판매단가(ADR)를 넘어, 투숙객이 리조트 내 다른 시설(루지, 미디어아트, F&B)에서 소비한 시너지 총량을 측정하는 최상위 경영 지표입니다.'
   },
   visitorCount: {
@@ -88,8 +88,8 @@ const METRIC_PRESETS: Record<MetricPresetKey, MetricExplainerData> = {
   occupancy: {
     title: '객실 점유율 (Occupancy / OCC)',
     badge: '호텔 경영 지표',
-    definition: '전체 가용 객실(175실) 중 당일 실제로 판매 및 배정되어 운영된 객실의 백분율입니다.',
-    formula: '(판매 객실 수 ÷ 전체 가용 객실 175실) × 100 (%)',
+    definition: '전체 물리 가용 객실 중 당일 실제로 판매 및 배정되어 운영된 객실의 백분율입니다.',
+    formula: '(판매 객실 수 ÷ 전체 물리 가용 객실 수) × 100 (%)',
     insight: '비수기/성수기 공급 조절 및 하우스키핑/프런트 운영 인력 배치의 기본 잣대가 됩니다.'
   },
   golfRevenuePerTeam: {

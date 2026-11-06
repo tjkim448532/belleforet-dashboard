@@ -5455,7 +5455,7 @@ ORDER BY venue_name, rn;
 
 ---
 
-## 86. 🎟️×🤖 [P1 긴급/파이프라인] [Ticket 86] belleforetresort.com 공식 홈페이지 매일 자정 크롤링 정밀화 및 전 부문 실측 요금/패키지 완제품 서빙 파이프라인 고도화 (GET /api/v6/leisure/pricing-catalog)
+## 86. 🎟️×🤖 [완료] [Ticket 86] belleforetresort.com 공식 홈페이지 매일 자정 크롤링 정밀화 및 전 부문 실측 요금/패키지 완제품 서빙 파이프라인 고도화 (GET /api/v6/leisure/pricing-catalog)
 
 ### 86-1. 배경 및 대표님 절대 지침
 - **대표님/경영진 엄중 지적 (2026-11-06)**:
@@ -5606,3 +5606,22 @@ flowchart TD
    - 임의 작성된 거짓 가격·패키지 정보가 전면 제거되고, 매일 자정 실제 공식 웹사이트 및 예매 시스템에서 크롤링한 실측 데이터로 화면이 갱신되어 신뢰성 확보.
 2. **매일 아침 변경 감지 (Daily Verification)**:
    - 전일 대비 요금 인상/인하, 신규 패키지 출시, 판매 종료 상품이 매일 아침 대시보드 템플릿에 실시간 반영되어 경영진이 현장 판매 정책을 매일 즉시 확인 가능.
+
+---
+
+### 86-6. 배포 및 실측 검증 완료 보고 (2026-11-06)
+- **배포 확인 API**: `GET https://belleforet-data.vercel.app/api/v6/leisure/pricing-catalog`
+- **배포 검증 상태**: `verificationStatus: "VERIFIED"`, `lastUpdated: "2026-11-06T15:22:14.876+09:00"`
+- **실측 항목 대조 결과**:
+  1. **마운틴카트 (`MOUNTAIN_CART`)**:
+     - `standardPrice`: 30,000원, `discountPrice`: 22,500원 (충북도민/37사단/콘도투숙객 25% 할인), `memberPrice`: 15,000~21,000원
+     - 세부 권종: 그랜드포렛 코스 30,000원, 미니포렛 코스 5,000원 완제품 수신 완료.
+  2. **사계절 썰매장 (`SLED`)**:
+     - `standardPrice`: 20,000원, `discountPrice`: 15,000원 (무제한 썰매 대인 주중 20,000원 / 주말 25,000원, 1회권 13,000원) 완제품 수신 완료.
+  3. **미디어아트센터 (`MEDIA_ART`)**:
+     - `standardPrice`: 17,000원, `discountPrice`: 15,000원 (성인 17,000원 / 청소년 13,000원 / 어린이 10,000원) 완제품 수신 완료.
+  4. **스페셜 오퍼 / 패키지 (`specialOffers`)**:
+     - 공식 웹사이트 실측 패키지 7종(패밀리 올데이 5종 59,000원, 블랙프라이데이 PKG 118,000원, 천고마비의 계절 PKG 118,000원 등) 수신 완료.
+- **프론트엔드 연동 상태**:
+  - `LeisurePricing.tsx`에서 정규 마트/크롤링 완제품 바인딩 완료.
+  - 가짜/더미 가격 경고 배너(`isOutdatedBackend`) 자동 소멸 및 공식 검증 완료 배지(`VERIFIED`) 정상 활성화 확인.

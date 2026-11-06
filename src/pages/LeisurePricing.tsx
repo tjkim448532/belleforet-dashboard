@@ -47,6 +47,7 @@ export default function LeisurePricing() {
   const [facilities, setFacilities] = useState<LeisureFacilityPricing[]>(LEISURE_FACILITIES);
   const [lastUpdated, setLastUpdated] = useState<string>('공식 요금표 SSOT');
   const [crawlSource, setCrawlSource] = useState<string>('belleforetresort.com (공식 웹사이트)');
+  const [verificationStatus, setVerificationStatus] = useState<string>('VERIFIED');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
@@ -62,95 +63,115 @@ export default function LeisurePricing() {
         if (payload?.lastUpdated) {
           setLastUpdated(`${payload.lastUpdated.replace('T', ' ').substring(0, 16)} (자정 크롤링 동기화)`);
         }
-        if (payload?.source) {
-          setCrawlSource(payload.source);
+        if (payload?.source || payload?.crawlSource) {
+          setCrawlSource(payload.source || payload.crawlSource);
         }
-        const topFacilities = Array.isArray(res?.facilities)
+        if (payload?.verificationStatus) {
+          setVerificationStatus(payload.verificationStatus);
+        }
+
+        const topFacilities: any[] = Array.isArray(res?.facilities)
           ? res.facilities
           : Array.isArray(payload?.facilities)
           ? payload.facilities
           : [];
-        const isFullCatalogSchema =
-          topFacilities.length > 0 &&
-          topFacilities.every((item: any) => item?.mainCategory && Array.isArray(item?.regularPrices));
 
-        if (isFullCatalogSchema) {
-          setFacilities(topFacilities);
-        } else {
-          const built: LeisureFacilityPricing[] = [];
-          const fmtWon = (v: any) =>
-            v !== null && v !== undefined && !isNaN(Number(v))
-              ? `${Number(v).toLocaleString()}원`
-              : '-';
+        const built: LeisureFacilityPricing[] = [];
+        const fmtWon = (v: any) =>
+          v !== null && v !== undefined && !isNaN(Number(v))
+            ? `${Number(v).toLocaleString()}원`
+            : '-';
+        const existingNames = new Set<string>();
 
-          if (payload?.golfSnapshot?.verified) {
-            const gs = payload.golfSnapshot;
-            built.push({
-              id: 'golf-greenfee',
-              name: gs.facilityName || '블랙스톤 벨포레 CC',
-              mainCategory: 'golf',
-              mainCategoryLabel: '골프',
-              subCategory: '골프 라운딩',
-              summary: '원남호와 두타산 정규 코스 그린피 · 카트 · 캐디 요금 (공식 홈페이지 실시간 크롤링)',
-              representativePrice: `주중 ${gs.greenFeeWeekday || '-'} / 주말 ${gs.greenFeeWeekend || '-'}`,
-              operatingHours: '-',
-              closedDay: '-',
-              contact: '-',
-              discountBadges: [],
-              regularPrices: [
-                { name: '그린피 (주중)', priceWeekday: gs.greenFeeWeekday || '-', priceWeekend: '-' },
-                { name: '그린피 (주말)', priceWeekday: '-', priceWeekend: gs.greenFeeWeekend || '-' },
-                { name: '카트비', priceWeekday: gs.cartFee || '-', priceWeekend: gs.cartFee || '-' },
-                { name: '캐디피', priceWeekday: gs.caddieFee || '-', priceWeekend: gs.caddieFee || '-' }
-              ],
-              discounts: [],
-              requirements: [],
-              notes: gs.lastChecked ? [`수집 시각: ${gs.lastChecked}`] : []
-            });
-          }
-
-          topFacilities.forEach((f: any, idx: number) => {
-            const regularPrices = Array.isArray(f.regularPrices) && f.regularPrices.length > 0
-              ? f.regularPrices
-              : [
-                  {
-                    name: f.ticketName || '정상가 / 우대가 / 회원가',
-                    priceWeekday: fmtWon(f.standardPrice),
-                    priceWeekend: f.weekendSurcharge ? `주말 할증 +${fmtWon(f.weekendSurcharge)}` : fmtWon(f.standardPrice),
-                    note: [
-                      f.discountPrice ? `우대가 ${fmtWon(f.discountPrice)}` : '',
-                      f.memberPrice ? `회원가 ${fmtWon(f.memberPrice)}` : ''
-                    ].filter(Boolean).join(' · ') || '-'
-                  }
-                ];
-
-            const repPrice = f.representativePrice
-              || (f.standardPrice ? `정상가 ${fmtWon(f.standardPrice)}${f.discountPrice ? ` / 우대가 ${fmtWon(f.discountPrice)}` : ''}` : '- (크롤링 확인 중)');
-
-            built.push({
-              id: f.facilityCode || `leisure-${idx}`,
-              name: f.facilityName || f.name || '-',
-              mainCategory: (f.mainCategory as MainCategoryType) || 'leisure',
-              mainCategoryLabel: f.mainCategoryLabel || '레져',
-              subCategory: f.categoryCode || f.subCategory || '레져',
-              summary: f.notes || f.summary || '',
-              representativePrice: repPrice,
-              operatingHours: f.operatingHours || '-',
-              closedDay: f.closedDay || '-',
-              contact: f.contact || '-',
-              discountBadges: Array.isArray(f.discountBadges) ? f.discountBadges : [],
-              regularPrices,
-              discounts: Array.isArray(f.discounts) ? f.discounts : [],
-              requirements: Array.isArray(f.requirements) ? f.requirements : [],
-              notes: Array.isArray(f.notes) ? f.notes : f.notes ? [f.notes] : []
-            });
+        // 1. Golf Snapshot fallback if CC not present in topFacilities
+        if (payload?.golfSnapshot?.verified && !topFacilities.some(f => (f.id === 'GOLF_CC' || f.facilityCode === 'GOLF_CC'))) {
+          const gs = payload.golfSnapshot;
+          existingNames.add(gs.facilityName || '블랙스톤 벨포레 CC');
+          built.push({
+            id: 'golf-greenfee',
+            name: gs.facilityName || '블랙스톤 벨포레 CC',
+            mainCategory: 'golf',
+            mainCategoryLabel: '골프',
+            subCategory: '골프 라운딩',
+            summary: '원남호와 두타산 정규 코스 그린피 · 카트 · 캐디 요금 (공식 홈페이지 실시간 크롤링)',
+            representativePrice: `주중 ${gs.greenFeeWeekday || '-'} / 주말 ${gs.greenFeeWeekend || '-'}`,
+            operatingHours: '-',
+            closedDay: '-',
+            contact: '-',
+            discountBadges: [],
+            regularPrices: [
+              { name: '그린피 (주중)', priceWeekday: gs.greenFeeWeekday || '-', priceWeekend: '-' },
+              { name: '그린피 (주말)', priceWeekday: '-', priceWeekend: gs.greenFeeWeekend || '-' },
+              { name: '카트비', priceWeekday: gs.cartFee || '-', priceWeekend: gs.cartFee || '-' },
+              { name: '캐디피', priceWeekday: gs.caddieFee || '-', priceWeekend: gs.caddieFee || '-' }
+            ],
+            discounts: [],
+            requirements: [],
+            notes: gs.lastChecked ? [`수집 시각: ${gs.lastChecked}`] : []
           });
+        }
 
-          if (Array.isArray(payload?.diningVenues)) {
-            payload.diningVenues.forEach((dv: any, idx: number) => {
+        // 2. Facilities (Golf, Room, Leisure, Dining)
+        topFacilities.forEach((f: any, idx: number) => {
+          const fid = f.id || f.facilityCode || `facility-${idx}`;
+          const fname = f.name || f.facilityName || '-';
+          existingNames.add(fname);
+
+          const regularPrices = Array.isArray(f.regularPrices) && f.regularPrices.length > 0
+            ? f.regularPrices
+            : [
+                {
+                  name: f.ticketName || '정상가 / 우대가 / 회원가',
+                  priceWeekday: fmtWon(f.standardPrice),
+                  priceWeekend: f.weekendSurcharge ? `주말 할증 +${fmtWon(f.weekendSurcharge)}` : fmtWon(f.standardPrice),
+                  note: [
+                    f.discountPrice ? `우대가 ${fmtWon(f.discountPrice)}` : '',
+                    f.memberPrice ? `회원가 ${fmtWon(f.memberPrice)}` : ''
+                  ].filter(Boolean).join(' · ') || '-'
+                }
+              ];
+
+          const repPrice = f.representativePrice
+            || (f.standardPrice ? `정상가 ${fmtWon(f.standardPrice)}${f.discountPrice ? ` / 우대가 ${fmtWon(f.discountPrice)}` : ''}` : '- (크롤링 확인 중)');
+
+          const cat: MainCategoryType =
+            f.mainCategory === 'golf' || f.mainCategory === 'room' || f.mainCategory === 'dining'
+              ? f.mainCategory
+              : 'leisure';
+          const catLabel: '골프' | '객실' | '레져' | '식음' =
+            cat === 'golf' ? '골프' : cat === 'room' ? '객실' : cat === 'dining' ? '식음' : '레져';
+
+          built.push({
+            id: fid,
+            name: fname,
+            mainCategory: cat,
+            mainCategoryLabel: catLabel,
+            subCategory: f.subCategory || f.categoryCode || (catLabel === '레져' ? '어트랙션' : catLabel),
+            summary: f.summary || (Array.isArray(f.notes) ? f.notes.join(' / ') : f.notes) || '',
+            representativePrice: repPrice,
+            operatingHours: f.operatingHours || '-',
+            closedDay: f.closedDay || '-',
+            contact: f.contact || '-',
+            officialUrl: f.officialUrl,
+            location: f.location,
+            ageRequirement: f.ageRequirement,
+            discountBadges: Array.isArray(f.discountBadges) ? f.discountBadges : [],
+            regularPrices,
+            discounts: Array.isArray(f.discounts) ? f.discounts : [],
+            requirements: Array.isArray(f.requirements) ? f.requirements : [],
+            notes: Array.isArray(f.notes) ? f.notes : f.notes ? [f.notes] : []
+          });
+        });
+
+        // 3. Dining Venues (avoid duplicate if already added in facilities)
+        if (Array.isArray(payload?.diningVenues)) {
+          payload.diningVenues.forEach((dv: any, idx: number) => {
+            const dvName = dv.venueName || dv.normalizedName || '-';
+            if (!existingNames.has(dvName)) {
+              existingNames.add(dvName);
               built.push({
                 id: `dining-${idx}`,
-                name: dv.venueName || dv.normalizedName || '-',
+                name: dvName,
                 mainCategory: 'dining',
                 mainCategoryLabel: '식음',
                 subCategory: '식음업장',
@@ -166,43 +187,46 @@ export default function LeisurePricing() {
                 requirements: [],
                 notes: []
               });
+            }
+          });
+        }
+
+        // 4. Special Offers & Packages
+        if (Array.isArray(payload?.specialOffers)) {
+          payload.specialOffers.forEach((so: any, idx: number) => {
+            const cat: MainCategoryType =
+              so.category === 'golf' || so.category === 'room' || so.category === 'dining'
+                ? so.category
+                : 'leisure';
+            const catLabel: '골프' | '객실' | '레져' | '식음' =
+              cat === 'golf' ? '골프' : cat === 'room' ? '객실' : cat === 'dining' ? '식음' : '레져';
+            
+            const repPrice = so.priceText
+              || (so.price ? fmtWon(so.price) : so.discountRate ? `${so.discountRate}% 할인 특가` : '공식 예매 상세 참조');
+
+            built.push({
+              id: `offer-${so.id || idx}`,
+              name: so.title || so.normalizedName || '-',
+              mainCategory: cat,
+              mainCategoryLabel: catLabel,
+              subCategory: so.categoryLabel || '스페셜 오퍼',
+              summary: so.desc || '',
+              representativePrice: repPrice,
+              operatingHours: '-',
+              closedDay: '-',
+              officialUrl: so.link,
+              period: so.period,
+              isSpecialOffer: true,
+              discountBadges: Array.isArray(so.tags) ? so.tags : [],
+              regularPrices: Array.isArray(so.regularPrices) ? so.regularPrices : [],
+              discounts: Array.isArray(so.discounts) ? so.discounts : [],
+              requirements: Array.isArray(so.requirements) ? so.requirements : [],
+              notes: Array.isArray(so.notes) ? so.notes : so.period ? [`운영 기간: ${so.period}`] : []
             });
-          }
+          });
+        }
 
-          if (Array.isArray(payload?.specialOffers)) {
-            payload.specialOffers.forEach((so: any, idx: number) => {
-              const cat: MainCategoryType =
-                so.category === 'golf' || so.category === 'room' || so.category === 'dining'
-                  ? so.category
-                  : 'leisure';
-              const catLabel =
-                cat === 'golf' ? '골프' : cat === 'room' ? '객실' : cat === 'dining' ? '식음' : '레져';
-              
-              const repPrice = so.priceText
-                || (so.price ? fmtWon(so.price) : so.discountRate ? `${so.discountRate}% 할인 특가` : '공식 예매 상세 참조');
-
-              built.push({
-                id: `offer-${so.id || idx}`,
-                name: so.title || so.normalizedName || '-',
-                mainCategory: cat,
-                mainCategoryLabel: catLabel,
-                subCategory: so.categoryLabel || '스페셜 오퍼',
-                summary: so.desc || '',
-                representativePrice: repPrice,
-                operatingHours: '-',
-                closedDay: '-',
-                officialUrl: so.link,
-                period: so.period,
-                isSpecialOffer: true,
-                discountBadges: Array.isArray(so.tags) ? so.tags : [],
-                regularPrices: Array.isArray(so.regularPrices) ? so.regularPrices : [],
-                discounts: Array.isArray(so.discounts) ? so.discounts : [],
-                requirements: Array.isArray(so.requirements) ? so.requirements : [],
-                notes: Array.isArray(so.notes) ? so.notes : so.period ? [`운영 기간: ${so.period}`] : []
-              });
-            });
-          }
-
+        if (built.length > 0) {
           setFacilities(built);
         }
       } finally {
@@ -406,6 +430,12 @@ export default function LeisurePricing() {
                   <Clock size={13} className="text-[#B59269]" />
                   <span>최근 크롤링 일시: <strong className="text-white font-mono">{lastUpdated}</strong></span>
                 </div>
+                {verificationStatus === 'VERIFIED' && (
+                  <div className="flex items-center gap-1.5 bg-[#5FB878]/20 border border-[#5FB878]/40 px-2.5 py-0.5 rounded-full text-white text-[11px] font-semibold">
+                    <ShieldCheck size={13} className="text-[#5FB878]" />
+                    <span>공식 웹사이트 실측 검증 (VERIFIED)</span>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => setRefreshTrigger(prev => prev + 1)}

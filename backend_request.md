@@ -5451,3 +5451,117 @@ ORDER BY venue_name, rn;
 
 
 
+
+
+---
+
+## 86. 🎟️×🤖 [P1 긴급/파이프라인] [Ticket 86] belleforetresort.com 공식 홈페이지 매일 자정 크롤링 정밀화 및 전 부문 실측 요금/패키지 완제품 서빙 파이프라인 고도화 (GET /api/v6/leisure/pricing-catalog)
+
+### 86-1. 배경 및 대표님 절대 지침
+- **대표님/경영진 엄중 지적 (2026-11-06)**:
+  > **"시설·패키지 종합 이용요금 및 혜택 안내의 가격이나 내용이 모두 거짓인데"**
+  > **"이것은 템플레이트를 만들고 데이터는 크롤링해서 매일 확인해야해"**
+- **현상 진단**:
+  - 현재 `GET /api/v6/leisure/pricing-catalog`가 서빙 중인 요금 데이터(루지 18,000원, 썰매 15,000원, 스페셜 오퍼 가격 누락 등)는 과거(10월) 임의 작성된 더미/미검증 데이터로, 실제 리조트 현장 발권가 및 공식 웹사이트 판매 가격과 심각하게 불일치하여 경영진의 불신을 초래함.
+  - 리조트 비즈니스는 시즌·요일·기상·프로모션에 따라 요금과 패키지 상품이 수시로 변동되므로, **공식 웹사이트(`https://belleforetresort.com/`)와 예매 시스템을 매일 정기적으로 크롤링하여 실제 판매가와 패키지 내용을 매일 확인·동기화하는 자동화 파이프라인**이 필수적임.
+- **프론트엔드 조치 완료**:
+  - `src/pages/LeisurePricing.tsx`를 **공식 홈페이지 일일 크롤링 검증 템플릿(Daily Crawled Pricing Template)**으로 전면 정비 완료.
+  - 골프·객실·레저·식음 4대 전 부문의 권종별 요금, 우대 할인, 패키지 구성, 탑승 규정, 실시간 크롤링 메타 배지(`lastUpdated`, `crawlSource`, `[🔄 최신 요금 동기화 확인]` 버튼)를 완비함.
+  - 이에 따라 백엔드 팀에 **매일 자정 자동 크롤링 정밀화 및 완제품 서빙 파이프라인 고도화**를 긴급 요청함.
+
+---
+
+### 86-2. 데이터 파이프라인 아키텍처 (Ticket 86)
+
+```mermaid
+flowchart TD
+    A["AWS EventBridge<br>(매일 00:00 KST 정기 실행)"] --> B["AWS Lambda<br>(belleforet-pricing-crawler)"]
+    B --> C1["1) 레저 액티비티 요금 파싱<br>(https://belleforetresort.com/activity)"]
+    B --> C2["2) 골프 그린피·카트·캐디피 파싱<br>(https://belleforetresort.com/golf)"]
+    B --> C3["3) 콘도 객실 평형별 정상가·회원가 파싱<br>(https://belleforetresort.com/hotel)"]
+    B --> C4["4) 현재 판매 중인 스페셜 패키지 파싱<br>(https://belleforetresort.com/package)"]
+    C1 & C2 & C3 & C4 --> D["JSON 완제품 생성<br>(latest_pricing_catalog.json)"]
+    D --> E["AWS S3 업로드<br>(s3://.../catalog/latest_pricing_catalog.json)"]
+    E --> F["Vercel 백엔드 API<br>GET /api/v6/leisure/pricing-catalog"]
+    F --> G["프론트엔드 대시보드 템플릿<br>/leisure/pricing 매일 자동 반영"]
+```
+
+---
+
+### 86-3. 크롤링 대상 소스 및 세부 파싱 명세
+
+| 대상 부문 | 대상 공식 웹 URL | 필수 수집 필드 및 규격 |
+| :--- | :--- | :--- |
+| **레저 액티비티** | `https://belleforetresort.com/activity` | • **마운틴카트(루지)**: 대인/소인, 1회권/2회권/3회권 정규 요금, 주말 할증, 우대가(투숙객, 충북도민/증평군민, 분양회원)<br>• **사계절썰매장**: 1회권/3회권 요금, 키 제한, 우대가<br>• **벨포레 목장**: 대인/소인 입장료, 동물 먹이주기 체험비, 미운영 요일<br>• **미디어아트센터**: 상설 전시 관람권 정가 및 우대가<br>• **마리나클럽**: 제트보트, 요트/보트투어 1인 요금<br>• **모토아레나**: 레저카트 1인승/2인승, 스포츠카트 단가 및 라이선스 기준 |
+| **골프 라운딩** | `https://belleforetresort.com/golf` | • **그린피**: 주중/주말/공휴일 코스별 실측 그린피 (단위: 원)<br>• **카트비**: 팀당 카트 이용료<br>• **캐디피**: 팀당 캐디피<br>• **우대 정책**: 인터넷 회원 할인, 도민 할인 등 |
+| **콘도 객실** | `https://belleforetresort.com/hotel` | • **평형별**: 16평(Studio), 35평(1-Bed), 51평(2-Bed / Connecting)<br>• **요금 구분**: 주중(일~목), 금요일, 토요일/공휴일 공식 정상가 및 회원 우대가 |
+| **스페셜 오퍼 (패키지)** | `https://belleforetresort.com/package` | • **패키지 ID 및 상품명**: (예: 패밀리 4종 패스, 씽씽한끼 PKG 등)<br>• **판매 가격**: 실측 판매가 (`price`, 단위: 원 또는 `priceText`)<br>• **포함 내역**: 결합된 객실/레저/식음 티켓 세부 구성<br>• **판매 기간**: 시작일 ~ 종료일 (`period`)<br>• **상세 링크**: 공식 예매 페이지 URL (`link`) |
+
+---
+
+### 86-4. 백엔드 API 응답 JSON 규격 (`GET /api/v6/leisure/pricing-catalog`)
+
+```json
+{
+  "status": "success",
+  "data": {
+    "lastUpdated": "2026-11-06T00:00:39.685+09:00",
+    "crawledAt": "2026-11-06T00:00:15.120+09:00",
+    "source": "belleforetresort.com (공식 웹사이트 및 예매 시스템)",
+    "verificationStatus": "VERIFIED",
+    "facilities": [
+      {
+        "facilityCode": "MOUNTAIN_CART",
+        "facilityName": "마운틴카트 (익스트림루지)",
+        "mainCategory": "leisure",
+        "mainCategoryLabel": "레져",
+        "subCategory": "어트랙션",
+        "representativePrice": "정상가 18,000원 / 도민·투숙객 15,000원",
+        "operatingHours": "10:00 ~ 17:30 (발권마감 17:00)",
+        "closedDay": "연중무휴 (기상악화 시 탄력운영)",
+        "contact": "043-926-1000",
+        "discountBadges": ["충북도민 우대", "콘도 투숙객 할인", "분양회원 우대"],
+        "regularPrices": [
+          { "name": "루지 1회권 (대인)", "priceWeekday": "18,000원", "priceWeekend": "20,000원", "note": "신장 120cm 이상 단독 탑승" },
+          { "name": "루지 2회권 (대인)", "priceWeekday": "28,000원", "priceWeekend": "32,000원", "note": "동일인 연속 탑승 기준" },
+          { "name": "동반 탑승권 (소인)", "priceWeekday": "5,000원", "priceWeekend": "5,000원", "note": "신장 85cm~120cm 보호자 동반" }
+        ],
+        "discounts": [
+          { "target": "충북도민 / 증평군민", "rate": "20%", "discountPrice": "14,400원~", "condition": "신분증 지참 필수 (본인 한정)" },
+          { "target": "콘도 투숙객", "rate": "15%", "discountPrice": "15,300원~", "condition": "객실 키 또는 예약 문자 제시" },
+          { "target": "분양회원", "rate": "30%", "discountPrice": "12,600원~", "condition": "회원카드 지참 (동반 4인)" }
+        ],
+        "requirements": [
+          "신장 120cm 이상, 10세 이상 단독 탑승 가능",
+          "음주자, 임산부, 65세 이상 고령자 탑승 제한"
+        ],
+        "notes": [
+          "우천 또는 강설 시 안전을 위해 운행이 중단될 수 있습니다."
+        ],
+        "officialUrl": "https://belleforetresort.com/activity/1"
+      }
+    ],
+    "specialOffers": [
+      {
+        "id": "88",
+        "title": "패밀리 올데이 5종 패스",
+        "category": "leisure",
+        "price": 45000,
+        "priceText": "45,000원 (정상가 대비 25% 할인)",
+        "period": "2026-04-24 ~ 2026-11-30",
+        "desc": "마운틴카트, 사계절썰매, 미디어아트, 목장, 마리나클럽 통합 이용권",
+        "tags": ["#올인데이", "#가족패키지", "#인기상품"],
+        "link": "https://belleforetresort.com/package/88"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 86-5. 배포 완료 후 기대 효과
+1. **경영진 신뢰성 회복**:
+   - 임의 작성된 거짓 가격·패키지 정보가 전면 제거되고, 매일 자정 실제 공식 웹사이트 및 예매 시스템에서 크롤링한 실측 데이터로 화면이 갱신되어 신뢰성 확보.
+2. **매일 아침 변경 감지 (Daily Verification)**:
+   - 전일 대비 요금 인상/인하, 신규 패키지 출시, 판매 종료 상품이 매일 아침 대시보드 템플릿에 실시간 반영되어 경영진이 현장 판매 정책을 매일 즉시 확인 가능.

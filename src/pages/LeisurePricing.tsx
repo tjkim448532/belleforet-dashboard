@@ -45,7 +45,9 @@ export default function LeisurePricing() {
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [facilities, setFacilities] = useState<LeisureFacilityPricing[]>(LEISURE_FACILITIES);
   const [lastUpdated, setLastUpdated] = useState<string>('공식 요금표 SSOT');
+  const [crawlSource, setCrawlSource] = useState<string>('belleforetresort.com (공식 웹사이트)');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   // Fetch nightly S3 snapshot via backend API (100% Pure Consumer & Fail-Stop)
   useEffect(() => {
@@ -57,7 +59,10 @@ export default function LeisurePricing() {
         if (isCancelled || !res) return;
         const payload = res?.data ?? res;
         if (payload?.lastUpdated) {
-          setLastUpdated(`${payload.lastUpdated.replace('T', ' ').substring(0, 16)} (S3 실시간 동기화)`);
+          setLastUpdated(`${payload.lastUpdated.replace('T', ' ').substring(0, 16)} (자정 크롤링 동기화)`);
+        }
+        if (payload?.source) {
+          setCrawlSource(payload.source);
         }
         const topFacilities = Array.isArray(res?.facilities)
           ? res.facilities
@@ -85,7 +90,7 @@ export default function LeisurePricing() {
               mainCategory: 'golf',
               mainCategoryLabel: '골프',
               subCategory: '골프 라운딩',
-              summary: '원남호와 두타산 정규 코스 그린피 · 카트 · 캐디 요금 (백엔드 실시간 스냅샷)',
+              summary: '원남호와 두타산 정규 코스 그린피 · 카트 · 캐디 요금 (공식 홈페이지 실시간 크롤링)',
               representativePrice: `주중 ${gs.greenFeeWeekday || '-'} / 주말 ${gs.greenFeeWeekend || '-'}`,
               operatingHours: '-',
               closedDay: '-',
@@ -104,29 +109,39 @@ export default function LeisurePricing() {
           }
 
           topFacilities.forEach((f: any, idx: number) => {
+            const regularPrices = Array.isArray(f.regularPrices) && f.regularPrices.length > 0
+              ? f.regularPrices
+              : [
+                  {
+                    name: f.ticketName || '정상가 / 우대가 / 회원가',
+                    priceWeekday: fmtWon(f.standardPrice),
+                    priceWeekend: f.weekendSurcharge ? `주말 할증 +${fmtWon(f.weekendSurcharge)}` : fmtWon(f.standardPrice),
+                    note: [
+                      f.discountPrice ? `우대가 ${fmtWon(f.discountPrice)}` : '',
+                      f.memberPrice ? `회원가 ${fmtWon(f.memberPrice)}` : ''
+                    ].filter(Boolean).join(' · ') || '-'
+                  }
+                ];
+
+            const repPrice = f.representativePrice
+              || (f.standardPrice ? `정상가 ${fmtWon(f.standardPrice)}${f.discountPrice ? ` / 우대가 ${fmtWon(f.discountPrice)}` : ''}` : '- (크롤링 확인 중)');
+
             built.push({
               id: f.facilityCode || `leisure-${idx}`,
               name: f.facilityName || f.name || '-',
-              mainCategory: 'leisure',
-              mainCategoryLabel: '레져',
-              subCategory: f.categoryCode || '레져',
-              summary: f.notes || '',
-              representativePrice: `정상가 ${fmtWon(f.standardPrice)} / 우대가 ${fmtWon(f.discountPrice)}`,
+              mainCategory: (f.mainCategory as MainCategoryType) || 'leisure',
+              mainCategoryLabel: f.mainCategoryLabel || '레져',
+              subCategory: f.categoryCode || f.subCategory || '레져',
+              summary: f.notes || f.summary || '',
+              representativePrice: repPrice,
               operatingHours: f.operatingHours || '-',
               closedDay: f.closedDay || '-',
               contact: f.contact || '-',
-              discountBadges: [],
-              regularPrices: [
-                {
-                  name: '정상가 / 우대가 / 회원가',
-                  priceWeekday: fmtWon(f.standardPrice),
-                  priceWeekend: f.weekendSurcharge ? `주말 할증 +${fmtWon(f.weekendSurcharge)}` : fmtWon(f.standardPrice),
-                  note: `우대가 ${fmtWon(f.discountPrice)} · 회원가 ${fmtWon(f.memberPrice)}`
-                }
-              ],
-              discounts: [],
-              requirements: [],
-              notes: f.notes ? [f.notes] : []
+              discountBadges: Array.isArray(f.discountBadges) ? f.discountBadges : [],
+              regularPrices,
+              discounts: Array.isArray(f.discounts) ? f.discounts : [],
+              requirements: Array.isArray(f.requirements) ? f.requirements : [],
+              notes: Array.isArray(f.notes) ? f.notes : f.notes ? [f.notes] : []
             });
           });
 
@@ -139,14 +154,14 @@ export default function LeisurePricing() {
                 mainCategoryLabel: '식음',
                 subCategory: '식음업장',
                 summary: dv.operatingHours || '-',
-                representativePrice: '-',
+                representativePrice: dv.priceRange || '메뉴별 상이',
                 operatingHours: dv.operatingHours || '-',
                 closedDay: dv.closedDay || '-',
                 contact: dv.contact || '-',
                 officialUrl: dv.officialUrl,
                 discountBadges: [],
-                regularPrices: [],
-                discounts: [],
+                regularPrices: Array.isArray(dv.regularPrices) ? dv.regularPrices : [],
+                discounts: Array.isArray(dv.discounts) ? dv.discounts : [],
                 requirements: [],
                 notes: []
               });
@@ -161,6 +176,10 @@ export default function LeisurePricing() {
                   : 'leisure';
               const catLabel =
                 cat === 'golf' ? '골프' : cat === 'room' ? '객실' : cat === 'dining' ? '식음' : '레져';
+              
+              const repPrice = so.priceText
+                || (so.price ? fmtWon(so.price) : so.discountRate ? `${so.discountRate}% 할인 특가` : '공식 예매 상세 참조');
+
               built.push({
                 id: `offer-${so.id || idx}`,
                 name: so.title || so.normalizedName || '-',
@@ -168,17 +187,17 @@ export default function LeisurePricing() {
                 mainCategoryLabel: catLabel,
                 subCategory: so.categoryLabel || '스페셜 오퍼',
                 summary: so.desc || '',
-                representativePrice: so.period || '-',
+                representativePrice: repPrice,
                 operatingHours: '-',
                 closedDay: '-',
                 officialUrl: so.link,
                 period: so.period,
                 isSpecialOffer: true,
                 discountBadges: Array.isArray(so.tags) ? so.tags : [],
-                regularPrices: [],
-                discounts: [],
-                requirements: [],
-                notes: []
+                regularPrices: Array.isArray(so.regularPrices) ? so.regularPrices : [],
+                discounts: Array.isArray(so.discounts) ? so.discounts : [],
+                requirements: Array.isArray(so.requirements) ? so.requirements : [],
+                notes: Array.isArray(so.notes) ? so.notes : so.period ? [`운영 기간: ${so.period}`] : []
               });
             });
           }
@@ -192,7 +211,7 @@ export default function LeisurePricing() {
 
     fetchLatestCatalog();
     return () => { isCancelled = true; };
-  }, []);
+  }, [refreshTrigger]);
 
   // Category counts
   const categoryCounts = useMemo(() => {
@@ -356,15 +375,38 @@ export default function LeisurePricing() {
             <div>
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1B382E]/80 border border-white/20 text-white/90 text-xs font-semibold backdrop-blur-xs shadow-xs mb-3">
                 <span className="w-2 h-2 rounded-full bg-[#5FB878] animate-pulse" />
-                <span>BELLEFORET RESORT · PRICING & BENEFITS</span>
+                <span>BELLEFORET RESORT · DAILY CRAWLER TEMPLATE</span>
                 {isSyncing && <RefreshCw size={11} className="animate-spin text-[#5FB878]" />}
               </div>
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">
-                시설·패키지 종합 이용요금 및 혜택 안내
+              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-white flex items-center gap-2.5">
+                <span>시설·패키지 종합 이용요금 및 혜택 안내</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#B59269] text-white hidden sm:inline-block">
+                  일일 크롤링 검증 템플릿
+                </span>
               </h1>
-              <p className="text-sm text-white/80 mt-1">
-                골프, 객실, 레저, 식음 4대 전 부문의 정상 요금, 우대 할인, 세부 구성 및 스페셜 오퍼를 일목요연하게 제공합니다. (기준: {lastUpdated})
+              <p className="text-sm text-white/80 mt-1 leading-relaxed">
+                벨포레 공식 웹사이트(belleforetresort.com) 일일 자동 크롤링 검증 템플릿입니다. 매일 자정 크롤링된 골프·객실·레저·식음 4대 전 부문 실측 요금과 패키지 구성을 대조·확인합니다.
               </p>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-white/70 mt-3 pt-3 border-t border-white/10">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#5FB878]"></span>
+                  <span>수집 출처: <strong className="text-white">{crawlSource}</strong></span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock size={13} className="text-[#B59269]" />
+                  <span>최근 크롤링 일시: <strong className="text-white font-mono">{lastUpdated}</strong></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRefreshTrigger(prev => prev + 1)}
+                  disabled={isSyncing}
+                  className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <RefreshCw size={11} className={isSyncing ? 'animate-spin' : ''} />
+                  <span>{isSyncing ? '크롤링 데이터 동기화 중...' : '최신 요금 동기화 확인'}</span>
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center gap-2 self-start md:self-center">

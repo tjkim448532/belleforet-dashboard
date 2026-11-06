@@ -7,7 +7,8 @@ import {
   TrendingUp,
   TrendingDown,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Sparkles
 } from 'lucide-react';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
@@ -66,9 +67,14 @@ export default function RevenueVarianceRca() {
   const [loading, setLoading] = useState<boolean>(true);
 
   // 아코디언 상태 (기본 모두 접힘)
+  const [openAiBriefing, setOpenAiBriefing] = useState<boolean>(false);
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [aiFetchedKey, setAiFetchedKey] = useState<string>('');
   const [openFactorAccordion, setOpenFactorAccordion] = useState<boolean>(false);
   const [openSegmentAccordion, setOpenSegmentAccordion] = useState<Record<string, boolean>>({});
   const [openEnvAccordion, setOpenEnvAccordion] = useState<boolean>(false);
+
+  const currentQueryKey = `${dateKey}_${compareMode}`;
 
   const toggleSegment = (code: string) => {
     setOpenSegmentAccordion((prev) => ({ ...prev, [code]: !prev[code] }));
@@ -91,12 +97,40 @@ export default function RevenueVarianceRca() {
     }
   };
 
+  const handleToggleAiBriefing = async () => {
+    const nextOpen = !openAiBriefing;
+    setOpenAiBriefing(nextOpen);
+
+    if (nextOpen && aiFetchedKey !== currentQueryKey) {
+      setAiLoading(true);
+      try {
+        const res = await secureFetcher(
+          `${API_BASE}/api/v6/report/revenue-variance-rca?startDate=${startDate}&endDate=${effectiveEndDate}&compareMode=${compareMode}&aiBriefing=1`
+        ).catch(() => null);
+
+        if (res && res.success) {
+          setRcaData(res.data || res);
+          setAiFetchedKey(currentQueryKey);
+        }
+      } finally {
+        setAiLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     fetchRcaData();
   }, [startDate, effectiveEndDate, compareMode]);
 
   const period = rcaData?.period || null;
   const formula = rcaData?.formulaDecomposition || null;
+  const aiBriefing = rcaData?.aiBriefing || rcaData?.structuredReport?.aiBriefing || null;
+  const aiLabeledSentences: any[] = Array.isArray(aiBriefing?.labeledSentences)
+    ? aiBriefing.labeledSentences
+    : [];
+  const aiSentences: string[] = Array.isArray(aiBriefing?.sentences)
+    ? aiBriefing.sentences
+    : [];
   const segIsolation = rcaData?.segmentIsolation || null;
   const segmentSummaryRows: any[] = Array.isArray(segIsolation?.segmentSummaryRows)
     ? segIsolation.segmentSummaryRows
@@ -291,9 +325,58 @@ export default function RevenueVarianceRca() {
           </div>
         </div>
 
+        {/* [버튼 클릭형] ✨ AI 핵심 원인 4문장 브리핑 패널 */}
+        <div className="border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            onClick={handleToggleAiBriefing}
+            className="w-full flex items-center justify-between text-xs font-bold text-[#1B382E] bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg px-3.5 py-2.5 transition-colors cursor-pointer"
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles size={14} className="text-[#1B382E]" />
+              <span>✨ AI로 매출 증감 원인 4문장 요약 {openAiBriefing ? '접기' : '보기'}</span>
+              {aiLoading && <span className="text-[11px] font-normal text-slate-500 ml-1">(AI 최신 분석 갱신 중...)</span>}
+            </span>
+            {openAiBriefing ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+          </button>
+
+          {openAiBriefing && aiBriefing && (
+            <div className="mt-2.5 rounded-lg bg-slate-50 border border-slate-200 p-4 space-y-3 text-xs">
+              {aiBriefing?.oneLineTakeaway && (
+                <div className="rounded-md bg-white border border-slate-200 px-3 py-2 font-bold text-[#1B382E] leading-relaxed">
+                  핵심 요약: {fmtText(aiBriefing.oneLineTakeaway)}
+                </div>
+              )}
+
+              {aiLabeledSentences.length > 0 ? (
+                <div className="space-y-2">
+                  {aiLabeledSentences.map((item: any, sIdx: number) => (
+                    <div key={item?.step ?? sIdx} className="leading-relaxed text-slate-700">
+                      <span className="inline-block font-bold text-[#1B382E] bg-white border border-slate-200 rounded px-1.5 py-0.5 mr-1.5 text-[11px]">
+                        [{fmtText(item?.step ?? sIdx + 1)}. {fmtText(item?.tag)}]
+                      </span>
+                      <span>{fmtText(item?.text)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                aiSentences.length > 0 && (
+                  <div className="space-y-1.5">
+                    {aiSentences.map((sentence: string, sIdx: number) => (
+                      <div key={sIdx} className="leading-relaxed text-slate-700">
+                        • {fmtText(sentence)}
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+
         {/* [아코디언] 4가지 원인별 금액 분해 */}
         {formula && (
-          <div className="border-t border-slate-100 pt-3">
+          <div className="border-t border-slate-100 pt-2">
             <button
               type="button"
               onClick={() => setOpenFactorAccordion((prev) => !prev)}
@@ -464,7 +547,7 @@ export default function RevenueVarianceRca() {
                     {row?.visitorDiff !== null && row?.visitorDiff !== undefined && (
                       <span>
                         {' '}
-                        · {segCode === 'LEISURE' ? '시설 이용(티켓)' : '방문객'}{' '}
+                        · {fmtText(row?.visitorMetricLabel || (segCode === 'LEISURE' ? '시설 이용(티켓 연인원)' : '방문객'))}{' '}
                         <strong className={Number(row?.visitorDiff) < 0 ? 'text-rose-600' : 'text-emerald-700'}>
                           {fmtSignedInt(row?.visitorDiff, '명')}
                         </strong>

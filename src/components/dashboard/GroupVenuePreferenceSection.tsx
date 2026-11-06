@@ -16,7 +16,8 @@ import {
   Flame,
   AlertCircle,
   Moon,
-  Filter
+  Filter,
+  Calendar
 } from 'lucide-react';
 import GlobalDatePicker from '../GlobalDatePicker';
 import ContentDivisionNav from './ContentDivisionNav';
@@ -447,6 +448,13 @@ export default function GroupVenuePreferenceSection({
             <RotateCcw size={13} />
             <span>초기화</span>
           </button>
+
+          {period?.startDate && period?.endDate && (
+            <span className="text-xs font-bold text-[#B59269] bg-[#B59269]/15 border border-[#B59269]/30 px-3 py-1.5 rounded-xl font-mono flex items-center gap-1.5">
+              <Calendar size={13} className="text-[#B59269]" />
+              <span>분석 기간: <strong>{period.startDate} ~ {period.endDate}</strong> ({period.totalDays != null ? `${period.totalDays}일간` : ''})</span>
+            </span>
+          )}
         </div>
 
         {mode === 'ALL' && (
@@ -655,7 +663,7 @@ export default function GroupVenuePreferenceSection({
             <div className="bg-white rounded-3xl border border-[#D0C6BB]/75 shadow-xs overflow-hidden">
               <div className="p-6 border-b border-[#D0C6BB]/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-base sm:text-lg font-extrabold text-[#1B382E] flex items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#1B382E] flex flex-wrap items-center gap-2">
                     <Trophy size={19} className="text-[#B59269]" />
                     <span>
                       {venueCategory === 'FNB'
@@ -665,9 +673,18 @@ export default function GroupVenuePreferenceSection({
                     <span className="text-xs font-bold text-[#284F42] bg-[#284F42]/10 border border-[#284F42]/20 px-2.5 py-0.5 rounded-full">
                       {venueRankings.length}개 {venueCategory === 'FNB' ? '식음 매장' : '영업장'}
                     </span>
+                    {period?.startDate && period?.endDate && (
+                      <span className="text-xs font-bold text-[#B59269] bg-[#B59269]/15 border border-[#B59269]/30 px-2.5 py-0.5 rounded-full font-mono flex items-center gap-1">
+                        <Calendar size={12} />
+                        <span>기준 기간: {period.startDate} ~ {period.endDate} ({period.totalDays != null ? `${period.totalDays}일간` : ''})</span>
+                      </span>
+                    )}
                   </h3>
-                  <p className="text-xs text-[#5A6B63] mt-1">
+                  <p className="text-xs text-[#5A6B63] mt-1 leading-relaxed">
                     각 영업장이 유치한 단체 수(B2B 정산 + 객실후불), 단체 1팀당 평균 지출액, 그리고 단체가 방문한 날의 매장 전체 일평균 매출 급증 효과를 비교합니다.
+                    <span className="text-[#B59269] font-medium ml-1">
+                      (※ 일수는 해당 기간 내 각 매장 실제 영업일수 기준: 단체방문일 vs 일반영업일)
+                    </span>
                   </p>
                 </div>
 
@@ -716,7 +733,7 @@ export default function GroupVenuePreferenceSection({
                       </th>
                       <th className="py-3.5 px-4 text-right">
                         <div>단체 방문일 vs 평소 일평균 매출</div>
-                        <div className="text-[10px] text-blue-600 font-normal">방문일수 / 미방문일수</div>
+                        <div className="text-[10px] text-blue-600 font-normal">방문일수 vs 일반영업일수 (매장 실영업일 기준)</div>
                       </th>
                       <th className="py-3.5 px-4 text-right">
                         <div>단체 방문 효과 (매출 급증률)</div>

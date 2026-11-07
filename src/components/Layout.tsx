@@ -583,8 +583,8 @@ export default function Layout() {
             </div>
           )}
 
-          {/* 6. ⚡ 시너지 & 매출 예측 분석 Accordion */}
-          {hasRole('management') && (
+          {/* 6. ⚡ 시너지 & 매출 예측 분석 Accordion (슈퍼 관리자 / 임원 전용) */}
+          {isAllAccess && (
             <div className="mt-1.5">
             <button
               onClick={() => setSynergyOpen(!synergyOpen)}
@@ -653,8 +653,8 @@ export default function Layout() {
           </div>
           )}
 
-          {/* 7. 전략 목표 시뮬레이터 & 전 부문 종합 요금표 */}
-          {hasRole('management') && (
+          {/* 7. 전략 목표 시뮬레이터 & 전 부문 종합 요금표 (슈퍼 관리자 / 임원 전용) */}
+          {isAllAccess && (
             <div className="mt-3 pt-2 border-t border-white/10 space-y-1">
               <NavLink
                 to="/strategic-simulator"
@@ -671,11 +671,7 @@ export default function Layout() {
                 </div>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/20 text-white border border-white/30">v2 PRO</span>
               </NavLink>
-            </div>
-          )}
 
-          {(hasRole('leisure') || hasRole('resort') || hasRole('management')) && (
-            <div className="space-y-1">
               <NavLink
                 to="/leisure/pricing"
                 className={({ isActive }) => `flex items-center gap-2.5 px-3.5 py-2.5 font-medium transition-all rounded-xl leading-snug break-keep text-sm ${

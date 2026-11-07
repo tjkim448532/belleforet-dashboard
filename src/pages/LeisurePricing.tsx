@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import LeisurePackageBuilder from './LeisurePackageBuilder';
 import { secureFetcher } from '../lib/secureFetcher';
 import {
   Search,
@@ -38,6 +40,9 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL || 'https://belleforet-data.vercel.app';
 
 export default function LeisurePricing() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'builder' ? 'builder' : 'catalog';
+
   const [selectedCategory, setSelectedCategory] = useState<MainCategoryType | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDiscountFilter, setSelectedDiscountFilter] = useState<string>('all');
@@ -388,6 +393,30 @@ export default function LeisurePricing() {
     }
   };
 
+  if (activeTab === 'builder') {
+    return (
+      <div className="w-full relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-1 relative z-20">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSearchParams({})}
+              className="px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer bg-white text-[#5A6B63] hover:text-[#1B382E] border border-[#D0C6BB] shadow-xs"
+            >
+              <Ticket size={15} />
+              <span>← 시설·패키지 종합 이용요금표로 돌아가기</span>
+            </button>
+            <div className="px-4 py-2 rounded-2xl text-xs font-bold flex items-center gap-2 bg-[#B59269] text-white shadow-md border border-[#9E7542]">
+              <Sparkles size={15} />
+              <span>레저 복합 패키지 생성기 (0-Variance Builder)</span>
+            </div>
+          </div>
+        </div>
+        <LeisurePackageBuilder />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full min-h-screen bg-[#F4F3EE] text-[#1B382E] tracking-tight pb-16 relative">
       {/* Ambient Forest Banner */}
@@ -448,7 +477,17 @@ export default function LeisurePricing() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 self-start md:self-center">
+            <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
+              <button
+                type="button"
+                onClick={() => setSearchParams({ tab: 'builder' })}
+                className="px-3.5 py-2 rounded-2xl bg-[#B59269] hover:bg-[#9E7542] text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                title="새로운 복합 패키지를 생성하고 영업장별 0-Variance 배분을 설정합니다"
+              >
+                <Sparkles size={13} />
+                <span>복합 패키지 생성기 (0-Variance)</span>
+              </button>
+
               {/* View Mode Toggle */}
               <div className="flex items-center bg-white/10 p-1 rounded-2xl border border-white/20 text-xs font-bold backdrop-blur-md">
                 <button

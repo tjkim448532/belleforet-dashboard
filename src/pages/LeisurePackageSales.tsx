@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useDate } from '../contexts/DateContext';
 import { secureFetcher } from '../lib/secureFetcher';
 import { 
@@ -181,7 +182,15 @@ export default function LeisurePackageSales() {
             </p>
           </div>
 
-          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="mt-4 md:mt-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <Link
+              to="/leisure/package-builder"
+              className="px-3.5 py-2 bg-white/15 hover:bg-white/25 text-white border border-white/25 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer backdrop-blur-md"
+              title="새로운 레저 복합 패키지를 생성하고 0-Variance 배분을 설정합니다"
+            >
+              <Sparkles size={13} className="text-[#CAAC86]" />
+              <span>패키지 생성기 (0-Variance)</span>
+            </Link>
             <GlobalDatePicker />
             <button
               onClick={fetchPackageSales}

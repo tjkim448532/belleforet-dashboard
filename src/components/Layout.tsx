@@ -442,6 +442,18 @@ export default function Layout() {
                   복합 패키지 매출 & 유입 기여도
                 </NavLink>
                 <NavLink
+                  to="/leisure/package-builder"
+                  className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
+                    isActive || window.location.pathname === '/leisure-package-builder'
+                      ? 'bg-[#B59269] text-white font-bold shadow-xs'
+                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                  }`}
+                  onClick={handleNavClick}
+                >
+                  <Sparkles size={14} className="shrink-0 text-[#CAAC86]" />
+                  레저 복합 패키지 생성기 (0-Variance)
+                </NavLink>
+                <NavLink
                   to="/leisure/simulator"
                   className={({ isActive }) => `flex items-center gap-2 w-full text-left px-3 py-2 text-[13px] font-medium rounded-xl transition-colors leading-snug break-keep ${
                     isActive || window.location.pathname === '/leisure-simulator'
